@@ -17,13 +17,11 @@ services:
         sync: false          # e.g. https://arenaiq.onrender.com
 
   # ── Frontend (static) ────────────────────────────────────────────────────────
-  - type: web
+  - type: static
     name: arenaiq-frontend
-    env: static
-    plan: free
     rootDir: apps/frontend
     buildCommand: npm ci && npm run build
-    staticPublishPath: dist
+    publishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
         sync: false          # e.g. https://arenaiq-backend.onrender.com
