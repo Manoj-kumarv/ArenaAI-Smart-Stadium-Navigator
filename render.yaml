@@ -1,0 +1,37 @@
+services:
+  # ── Backend ──────────────────────────────────────────────────────────────────
+  - type: web
+    name: arenaiq-backend
+    env: python
+    region: oregon
+    plan: free
+    rootDir: apps/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false          # set manually in Render dashboard
+      - key: FRONTEND_ORIGIN
+        sync: false          # e.g. https://arenaiq.onrender.com
+
+  # ── Frontend (static) ────────────────────────────────────────────────────────
+  - type: web
+    name: arenaiq-frontend
+    env: static
+    region: oregon
+    plan: free
+    rootDir: apps/frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false          # e.g. https://arenaiq-backend.onrender.com
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
