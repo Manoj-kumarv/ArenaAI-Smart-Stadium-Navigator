@@ -20,7 +20,6 @@ services:
   - type: web
     name: arenaiq-frontend
     env: static
-    region: oregon
     plan: free
     rootDir: apps/frontend
     buildCommand: npm ci && npm run build
