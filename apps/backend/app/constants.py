@@ -33,7 +33,7 @@ AI_MAX_RETRIES: int = 1
 AI_REQUEST_TIMEOUT_SECONDS: int = 30
 """Maximum time to wait for a Gemini API response before falling back."""
 
-GEMINI_MODEL_NAME: str = "gemini-1.5-flash"
+GEMINI_MODEL_NAME: str = "gemini-flash-latest"
 """Default Gemini model used for AI agent responses."""
 
 # ─── Rate Limiting ────────────────────────────────────────────────────────────
