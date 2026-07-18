@@ -2,12 +2,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from app.models import ColorState, IncidentSeverity, IncidentStatus, UserRole, ZoneType, AuditAction
-
+from app.models import AuditAction, ColorState, IncidentSeverity, IncidentStatus, UserRole, ZoneType
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -49,7 +47,7 @@ class ZoneOut(BaseModel):
     y: float
     w: float
     h: float
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -57,7 +55,7 @@ class ZoneOut(BaseModel):
 class ZoneActionRequest(BaseModel):
     zone_id: str
     action: str = Field(description="broadcast | deploy_volunteers | update_signage")
-    detail: Optional[str] = Field(default=None, max_length=512)
+    detail: str | None = Field(default=None, max_length=512)
 
     @field_validator("action")
     @classmethod
@@ -79,7 +77,7 @@ class CrowdAnalysisResponse(BaseModel):
 # ─── Incident ─────────────────────────────────────────────────────────────────
 
 class IncidentCreate(BaseModel):
-    zone_id: Optional[str] = None
+    zone_id: str | None = None
     title: str = Field(min_length=5, max_length=256)
     description: str = Field(min_length=10, max_length=2000)
     severity: IncidentSeverity = IncidentSeverity.medium
@@ -87,16 +85,16 @@ class IncidentCreate(BaseModel):
 
 class IncidentOut(BaseModel):
     id: int
-    zone_id: Optional[str] = None
+    zone_id: str | None = None
     title: str
     description: str
     severity: IncidentSeverity
     status: IncidentStatus
-    ai_severity_score: Optional[float] = None
-    ai_resolution: Optional[str] = None
+    ai_severity_score: float | None = None
+    ai_resolution: str | None = None
     created_at: datetime
     updated_at: datetime
-    resolved_at: Optional[datetime] = None
+    resolved_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -123,7 +121,7 @@ class BroadcastRequest(BaseModel):
 
 class BroadcastOut(BaseModel):
     id: int
-    incident_id: Optional[int] = None
+    incident_id: int | None = None
     message_en: str
     message_es: str
     message_ar: str
@@ -152,10 +150,10 @@ class FanQueryResponse(BaseModel):
 class AuditLogOut(BaseModel):
     id: int
     action: AuditAction
-    user_id: Optional[int] = None
-    incident_id: Optional[int] = None
-    zone_id: Optional[str] = None
-    detail: Optional[str] = None
+    user_id: int | None = None
+    incident_id: int | None = None
+    zone_id: str | None = None
+    detail: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

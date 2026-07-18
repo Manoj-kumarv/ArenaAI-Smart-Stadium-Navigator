@@ -1,5 +1,4 @@
-"""
-Correlation ID middleware for request tracing.
+"""Correlation ID middleware for request tracing.
 
 Generates or propagates a unique X-Correlation-ID header for each request,
 enabling end-to-end request tracking across logs, AI agent calls,
@@ -34,6 +33,7 @@ def get_correlation_id() -> str | None:
 
     Returns:
         The correlation ID string, or None if called outside a request context.
+
     """
     return correlation_id_var.get()
 
@@ -49,7 +49,7 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
     from any part of the application during request processing.
     """
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # noqa: ANN001
+    async def dispatch(self, request: Request, call_next) -> Response:
         """Extract or generate a correlation ID and propagate it.
 
         Args:
@@ -58,6 +58,7 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
 
         Returns:
             The HTTP response with the X-Correlation-ID header attached.
+
         """
         # Reuse client-provided correlation ID or generate a new one
         cid = request.headers.get(CORRELATION_HEADER, str(uuid.uuid4()))

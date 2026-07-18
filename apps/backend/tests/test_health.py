@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 
 def test_health_check_endpoint(client):
     """Verify that the health check endpoint returns 200 OK."""

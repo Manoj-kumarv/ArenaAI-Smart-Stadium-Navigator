@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import pytest
-from tests.conftest import ops_headers, fan_headers
-from app.models import User, UserRole
+from tests.conftest import ops_headers
 
 
 def test_signup_success(client):

@@ -1,5 +1,4 @@
-"""
-AI filter tests — Properties 4 & 5.
+"""AI filter tests — Properties 4 & 5.
 Property 4 — prompt injection strings return 422 and NEVER reach the LLM.
 Property 5 — PII in input returns 422 and NEVER reaches the LLM.
 Property 6 — confidence score is always 0.0–1.0.
@@ -9,15 +8,14 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from fastapi import HTTPException
 
 from app.ai.filters import (
-    check_prompt_injection,
     check_pii_in_input,
+    check_prompt_injection,
     has_pii,
     scrub_pii_from_output,
 )
-from fastapi import HTTPException
-
 
 # ─── Property 4: prompt injection rejection ──────────────────────────────────
 

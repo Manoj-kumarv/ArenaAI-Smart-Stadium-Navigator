@@ -41,6 +41,7 @@ def check_prompt_injection(text: str) -> None:
 
     Raises:
         InputValidationError: If input contains potential prompt-injection patterns.
+
     """
     for pattern in _INJECTION_PATTERNS:
         if pattern.search(text):
@@ -57,6 +58,7 @@ def check_pii_in_input(text: str) -> None:
 
     Raises:
         InputValidationError: If input contains emails, phone numbers, SSNs, or credit cards.
+
     """
     if _EMAIL_RE.search(text):
         raise InputValidationError(detail="Input rejected: email addresses are not permitted.").to_http_exception()
@@ -76,6 +78,7 @@ def scrub_pii_from_output(text: str) -> str:
 
     Returns:
         The sanitized string.
+
     """
     text = _EMAIL_RE.sub("[REDACTED-EMAIL]", text)
     text = _PHONE_RE.sub("[REDACTED-PHONE]", text)
@@ -92,6 +95,7 @@ def has_pii(text: str) -> bool:
 
     Returns:
         True if any PII is detected, False otherwise.
+
     """
     return bool(
         _EMAIL_RE.search(text)

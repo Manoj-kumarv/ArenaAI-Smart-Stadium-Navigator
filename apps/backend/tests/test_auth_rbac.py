@@ -1,12 +1,10 @@
-"""
-RBAC tests — Property 3.
+"""RBAC tests — Property 3.
 Every write endpoint must return 403 when called with a fan role token.
 """
 from __future__ import annotations
 
-import pytest
-from tests.conftest import ops_headers, fan_headers
 from app.models import Zone, ZoneType
+from tests.conftest import fan_headers, ops_headers
 
 
 def seed_zone(db):

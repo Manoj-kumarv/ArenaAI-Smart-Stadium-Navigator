@@ -5,7 +5,7 @@ Ensures transaction safety and immutable audit logging.
 """
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, status
@@ -58,6 +58,7 @@ async def list_incidents(
 
     Returns:
         IncidentPage containing items list and pagination metadata.
+
     """
     q = db.query(Incident)
     if status_filter:
@@ -95,6 +96,7 @@ async def create_incident(
 
     Returns:
         The created Incident object.
+
     """
     # Security filters on title and description
     check_prompt_injection(payload.title)
@@ -127,6 +129,7 @@ async def get_incident(
 
     Raises:
         NotFoundError: If the incident does not exist.
+
     """
     incident = db.get(Incident, incident_id)
     if not incident:
@@ -164,6 +167,7 @@ async def resolve_incident(
         NotFoundError: If the incident is not found.
         AlreadyResolvedError: If the incident is already resolved.
         ResolutionRollbackError: If resolution fails and has been rolled back.
+
     """
     incident = db.get(Incident, incident_id)
     if not incident:
@@ -201,7 +205,7 @@ async def resolve_incident(
         incident.status = IncidentStatus.resolved
         incident.ai_resolution = json.dumps(ai_result)
         incident.ai_severity_score = ai_result.get("confidence")
-        incident.resolved_at = datetime.now(timezone.utc)
+        incident.resolved_at = datetime.now(UTC)
 
         # Update audit with result
         audit_row.detail = f"Resolved via AI. confidence={ai_result.get('confidence')}"
@@ -245,6 +249,7 @@ async def delete_incident(
 
     Raises:
         NotFoundError: If the incident does not exist.
+
     """
     incident = db.get(Incident, incident_id)
     if not incident:

@@ -3,10 +3,10 @@ from __future__ import annotations
 
 __all__ = [
     "CorrelationMiddleware",
-    "SecurityHeadersMiddleware",
     "RequestSizeLimitMiddleware",
+    "SecurityHeadersMiddleware",
 ]
 
 from app.middleware.correlation import CorrelationMiddleware
-from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.middleware.request_size import RequestSizeLimitMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware

@@ -6,11 +6,12 @@ and role-based access control (RBAC).
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Annotated, Callable
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
+from typing import Annotated
 
 import bcrypt
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -36,6 +37,7 @@ def get_password_hash(password: str) -> str:
 
     Returns:
         The encoded string representation of the hash.
+
     """
     pwd_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt()
@@ -51,6 +53,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
     Returns:
         True if the password is correct, False otherwise.
+
     """
     try:
         return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
@@ -64,7 +67,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 def _create_token(data: dict, expires_delta: timedelta) -> str:
     """Helper to generate JWT tokens with an expiration date."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + expires_delta
+    expire = datetime.now(UTC) + expires_delta
     to_encode["exp"] = expire
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -78,6 +81,7 @@ def create_access_token(user_id: int, role: str) -> str:
 
     Returns:
         The encoded JWT token.
+
     """
     return _create_token(
         {"sub": str(user_id), "role": role},
@@ -93,6 +97,7 @@ def create_refresh_token(user_id: int) -> str:
 
     Returns:
         The encoded JWT token.
+
     """
     return _create_token(
         {"sub": str(user_id), "type": "refresh"},
@@ -120,6 +125,7 @@ def get_current_user(
 
     Raises:
         HTTPException: 401 Unauthorized if the token is invalid or user is missing.
+
     """
     credentials_exc = AuthenticationError(
         detail="Could not validate credentials",
@@ -150,6 +156,7 @@ def require_role(*roles: UserRole) -> Callable[[User], User]:
 
     Returns:
         A dependency function that checks user authorization.
+
     """
     def _checker(current_user: Annotated[User, Depends(get_current_user)]) -> User:
         if current_user.role not in roles:

@@ -1,17 +1,18 @@
-"""
-Seed script — run once to initialise the DB and populate demo data.
+"""Seed script — run once to initialise the DB and populate demo data.
 Usage:
     cd apps/backend
     python -m scripts.seed
 """
 from __future__ import annotations
 
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.database import engine, SessionLocal
-from app.models import Base, User, Zone, Incident, ZoneType, UserRole, IncidentSeverity, IncidentStatus
 from app.auth import get_password_hash
+from app.database import SessionLocal, engine
+from app.models import Base, Incident, IncidentSeverity, User, UserRole, Zone, ZoneType
 
 # ─── Create tables ────────────────────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 
 def test_security_headers_present(client):
     """Assert that secure headers are injected into every response by the middleware."""

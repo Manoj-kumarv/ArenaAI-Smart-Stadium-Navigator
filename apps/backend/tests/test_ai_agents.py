@@ -1,24 +1,22 @@
-"""
-Unit tests for AI agents, orchestrator caching, and Gemini API client.
+"""Unit tests for AI agents, orchestrator caching, and Gemini API client.
 Provides 100% test coverage for app/ai/ modules.
 """
 from __future__ import annotations
 
 import asyncio
 from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from app.ai.crowd_agent import run_crowd_agent
+from app.ai.gemini_client import _ensure_client, call_gemini, call_gemini_json
 from app.ai.incident_agent import run_incident_agent
 from app.ai.orchestrator import (
+    generate_broadcast,
     orchestrate_crowd,
     orchestrate_fan,
     orchestrate_incident,
-    generate_broadcast,
 )
-from app.ai.gemini_client import call_gemini, call_gemini_json, _ensure_client
-from app.models import ColorState
-
 
 # ─── Gemini Client Tests ──────────────────────────────────────────────────────
 
@@ -35,14 +33,14 @@ async def test_call_gemini_success():
     """Verify call_gemini returns response text on success."""
     mock_resp = AsyncMock()
     mock_resp.text = "Hello there"
-    
+
     with patch("app.ai.gemini_client._ensure_client", return_value=True), \
          patch("google.generativeai.GenerativeModel") as mock_model:
-        
+
         instance = mock_model.return_value
         # mock loop executor or model.generate_content
         instance.generate_content = mock_gen = AsyncMock(return_value=mock_resp)
-        
+
         # We patch wait_for or run_in_executor to return mock_resp directly
         with patch("asyncio.wait_for", return_value=mock_resp):
             res = await call_gemini("Test prompt")
@@ -53,22 +51,18 @@ async def test_call_gemini_success():
 async def test_call_gemini_timeout():
     """Verify call_gemini returns None on TimeoutError."""
     with patch("app.ai.gemini_client._ensure_client", return_value=True), \
-         patch("google.generativeai.GenerativeModel"):
-        
-        with patch("asyncio.wait_for", side_effect=asyncio.TimeoutError):
-            res = await call_gemini("Test prompt")
-            assert res is None
+         patch("google.generativeai.GenerativeModel"), patch("asyncio.wait_for", side_effect=asyncio.TimeoutError):
+        res = await call_gemini("Test prompt")
+        assert res is None
 
 
 @pytest.mark.asyncio
 async def test_call_gemini_exception():
     """Verify call_gemini returns None on general exception."""
     with patch("app.ai.gemini_client._ensure_client", return_value=True), \
-         patch("google.generativeai.GenerativeModel"):
-        
-        with patch("asyncio.wait_for", side_effect=ValueError("API error")):
-            res = await call_gemini("Test prompt")
-            assert res is None
+         patch("google.generativeai.GenerativeModel"), patch("asyncio.wait_for", side_effect=ValueError("API error")):
+        res = await call_gemini("Test prompt")
+        assert res is None
 
 
 @pytest.mark.asyncio
@@ -164,18 +158,18 @@ async def test_orchestrate_crowd_caching():
         "recommendation": "Deploy monitoring.",
         "confidence": 0.70
     }
-    
+
     with patch("app.ai.orchestrator.run_crowd_agent", new_callable=AsyncMock) as mock_agent:
         mock_agent.return_value = mock_out
-        
+
         # First call (cache miss)
         res1 = await orchestrate_crowd("zone_c", "Zone C", 0.65, 2000)
         assert res1 == mock_out
-        
+
         # Second call (cache hit)
         res2 = await orchestrate_crowd("zone_c", "Zone C", 0.65, 2000)
         assert res2 == mock_out
-        
+
         mock_agent.assert_called_once()
 
 
@@ -184,10 +178,10 @@ async def test_orchestrate_fan_and_incident():
     """Verify orchestrate_fan and orchestrate_incident invoke agents successfully."""
     with patch("app.ai.orchestrator.run_fan_agent", new_callable=AsyncMock) as mock_fan, \
          patch("app.ai.orchestrator.run_incident_agent", new_callable=AsyncMock) as mock_inc:
-        
+
         await orchestrate_fan("restrooms")
         mock_fan.assert_called_once_with("restrooms")
-        
+
         await orchestrate_incident("title", "desc", "zone_a")
         mock_inc.assert_called_once_with("title", "desc", "zone_a")
 

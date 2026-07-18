@@ -1,5 +1,4 @@
-"""
-FastAPI application entry point for ArenaIQ Smart Stadium Navigator.
+"""FastAPI application entry point for ArenaIQ Smart Stadium Navigator.
 
 Configures the ASGI application with:
 - CORS policy locked to the configured frontend origin
@@ -14,25 +13,25 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+from app import telemetry
 from app.config import settings
 from app.database import engine, get_db
+from app.limiter import limiter
 from app.logging_config import setup_logging
 from app.middleware.correlation import CorrelationMiddleware
-from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.middleware.request_size import RequestSizeLimitMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.models import Base
-from app import telemetry
-from app.routers import auth, broadcast, fan, incidents, zones, ws
-from app.limiter import limiter
+from app.routers import auth, broadcast, fan, incidents, ws, zones
 
 # Configure structured logging before anything else
 setup_logging(
@@ -159,6 +158,7 @@ async def health() -> dict:
 
     Returns:
         A JSON object with the service status.
+
     """
     return {"status": "ok", "service": "arenaiq-backend", "version": "1.0.0"}
 
@@ -173,6 +173,7 @@ async def readiness() -> dict:
 
     Returns:
         A JSON object with individual dependency statuses.
+
     """
     checks: dict[str, str] = {}
 

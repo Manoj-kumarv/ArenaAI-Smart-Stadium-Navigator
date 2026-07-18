@@ -56,6 +56,7 @@ async def orchestrate_crowd(
 
     Returns:
         Analysis dictionary (cause, recommendation, confidence).
+
     """
     key = _cache_key("crowd", zone_id, round(density_pct, 2))
     cached = _get_cached(key)
@@ -76,6 +77,7 @@ async def orchestrate_fan(query: str) -> dict[str, Any]:
 
     Returns:
         Trilingual answers dict.
+
     """
     logger.info("Orchestrating query to Fan Agent")
     return await run_fan_agent(query)
@@ -95,6 +97,7 @@ async def orchestrate_incident(
 
     Returns:
         Incident classification and playbook dict.
+
     """
     logger.info("Orchestrating incident resolution to Incident Agent")
     return await run_incident_agent(title, description, zone_id)
@@ -135,6 +138,7 @@ async def generate_broadcast(
     Returns:
         Dictionary containing keys 'message_en', 'message_es', 'message_ar',
         and a boolean flag 'used_ai'.
+
     """
     prompt = BROADCAST_PROMPT.format(
         title=incident_title,

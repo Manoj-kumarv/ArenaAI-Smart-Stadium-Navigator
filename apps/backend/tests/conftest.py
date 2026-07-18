@@ -1,5 +1,4 @@
-"""
-Shared test fixtures — in-memory SQLite, FastAPI TestClient with overridden DB.
+"""Shared test fixtures — in-memory SQLite, FastAPI TestClient with overridden DB.
 """
 from __future__ import annotations
 
@@ -9,10 +8,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.auth import create_access_token, get_password_hash
 from app.database import Base, get_db
 from app.main import app
 from app.models import User, UserRole
-from app.auth import get_password_hash, create_access_token
 
 TEST_DATABASE_URL = "sqlite://"  # in-memory
 

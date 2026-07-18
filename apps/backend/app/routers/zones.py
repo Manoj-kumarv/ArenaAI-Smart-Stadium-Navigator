@@ -38,6 +38,7 @@ async def list_zones(db: Annotated[Session, Depends(get_db)]) -> list[Zone]:
 
     Returns:
         A list of Zone entities representing the current stadium state.
+
     """
     return db.query(Zone).order_by(Zone.id).all()
 
@@ -58,6 +59,7 @@ async def get_zone(
 
     Raises:
         NotFoundError: If the zone does not exist.
+
     """
     zone = db.get(Zone, zone_id)
     if not zone:
@@ -88,6 +90,7 @@ async def analyse_zone(
 
     Raises:
         NotFoundError: If the zone does not exist.
+
     """
     zone = db.get(Zone, zone_id)
     if not zone:
@@ -122,6 +125,7 @@ async def zone_action(
 
     Raises:
         NotFoundError: If the target zone does not exist.
+
     """
     zone = db.get(Zone, payload.zone_id)
     if not zone:
@@ -164,6 +168,7 @@ async def kpi_summary(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]
 
     Returns:
         KPI metrics for the dashboard.
+
     """
     zones = db.query(Zone).all()
     total_occupancy = sum(int(z.density_pct * z.capacity) for z in zones)

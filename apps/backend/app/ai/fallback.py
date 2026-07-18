@@ -1,5 +1,4 @@
-"""
-Rule-based fallback responses for all three agents.
+"""Rule-based fallback responses for all three agents.
 Activated automatically when Gemini is unavailable or returns invalid JSON.
 """
 from __future__ import annotations
@@ -83,8 +82,6 @@ def _classify_query(query: str) -> str:
 
 def fan_fallback(query: str, language: str = "en") -> dict:
     key = _classify_query(query)
-    lang_map = {"en": _FAN_RESPONSES_EN, "es": _FAN_RESPONSES_ES, "ar": _FAN_RESPONSES_AR}
-    responses = lang_map.get(language, _FAN_RESPONSES_EN)
     return {
         "answer_en": _FAN_RESPONSES_EN[key],
         "answer_es": _FAN_RESPONSES_ES[key],

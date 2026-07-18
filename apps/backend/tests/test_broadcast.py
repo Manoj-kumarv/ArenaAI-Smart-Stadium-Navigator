@@ -1,5 +1,4 @@
-"""
-Broadcast atomicity tests — Property 7.
+"""Broadcast atomicity tests — Property 7.
 If any one of the 3 languages fails, the entire broadcast is treated as failed
 and nothing is stored.
 """
@@ -9,9 +8,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from tests.conftest import ops_headers
-from app.models import Zone, ZoneType, Incident, BroadcastLog
 from app.ai.orchestrator import generate_broadcast
+from app.models import BroadcastLog, Incident, Zone, ZoneType
+from tests.conftest import ops_headers
 
 
 def _seed(db):

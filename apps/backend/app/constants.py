@@ -1,5 +1,4 @@
-"""
-Named constants for the ArenaIQ backend.
+"""Named constants for the ArenaIQ backend.
 
 Centralizes all magic numbers and strings used across the application,
 improving maintainability and making business rules explicit.

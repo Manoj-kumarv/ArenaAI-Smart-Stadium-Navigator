@@ -1,5 +1,4 @@
-"""
-Security headers middleware for the ArenaIQ backend.
+"""Security headers middleware for the ArenaIQ backend.
 
 Adds defense-in-depth HTTP security headers to all responses,
 mitigating XSS, clickjacking, MIME sniffing, and other common
@@ -18,6 +17,7 @@ Headers applied:
 References:
     - OWASP Secure Headers: https://owasp.org/www-project-secure-headers/
     - MDN Security Headers: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     potentially dangerous behaviors.
     """
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # noqa: ANN001
+    async def dispatch(self, request: Request, call_next) -> Response:
         """Process the request and add security headers to the response.
 
         Args:
@@ -43,6 +43,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         Returns:
             The HTTP response with security headers applied.
+
         """
         response: Response = await call_next(request)
 

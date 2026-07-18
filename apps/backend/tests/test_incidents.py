@@ -1,17 +1,14 @@
-"""
-Incident resolution and rollback tests — Property 8.
+"""Incident resolution and rollback tests — Property 8.
 Simulates a mid-resolution failure and asserts:
   - incident status reverts to 'open'
   - no partial audit rows persist
 """
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 
-import pytest
-
-from tests.conftest import ops_headers, fan_headers
-from app.models import Zone, ZoneType, Incident, IncidentStatus, AuditLog
+from app.models import AuditLog, Incident, IncidentStatus, Zone, ZoneType
+from tests.conftest import ops_headers
 
 
 def _seed(db):
@@ -31,8 +28,7 @@ def _seed(db):
 # ─── Property 8: rollback on AI failure ──────────────────────────────────────
 
 def test_incident_rollback_on_ai_failure(client, db):
-    """
-    When the AI agent raises an exception mid-workflow, the incident status
+    """When the AI agent raises an exception mid-workflow, the incident status
     must revert to 'open' and no partial audit rows should persist.
     """
     inc_id = _seed(db)

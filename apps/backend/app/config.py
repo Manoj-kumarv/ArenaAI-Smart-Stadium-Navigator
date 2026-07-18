@@ -1,5 +1,4 @@
-"""
-Configuration settings for the ArenaIQ backend.
+"""Configuration settings for the ArenaIQ backend.
 
 Uses pydantic-settings to load configuration from environment variables
 or .env files with automatic validation.

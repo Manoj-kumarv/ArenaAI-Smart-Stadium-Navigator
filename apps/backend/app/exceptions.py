@@ -1,5 +1,4 @@
-"""
-Custom exception hierarchy for the ArenaIQ application.
+"""Custom exception hierarchy for the ArenaIQ application.
 
 Maps domain-specific errors to appropriate HTTP status codes, providing
 structured error handling across all routers and services.

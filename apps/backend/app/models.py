@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 import enum
-from datetime import datetime
 
 from sqlalchemy import (
-    Boolean, Column, DateTime, Enum, Float, ForeignKey,
-    Integer, String, Text, func,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    func,
 )
 from sqlalchemy.orm import relationship
 
 from app.database import Base
-
 
 # ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -59,12 +65,11 @@ class AuditAction(str, enum.Enum):
 # ─── Zone color-state logic (canonical — also used in tests) ──────────────────
 
 def density_to_color(density_pct: float) -> ColorState:
-    """
-    Property 1 (tested):
-      green    : density_pct < 0.60
-      yellow   : 0.60 <= density_pct < 0.85
-      red      : 0.85 <= density_pct < 0.95
-      critical : density_pct >= 0.95
+    """Property 1 (tested):
+    green    : density_pct < 0.60
+    yellow   : 0.60 <= density_pct < 0.85
+    red      : 0.85 <= density_pct < 0.95
+    critical : density_pct >= 0.95
     """
     if density_pct < 0.60:
         return ColorState.green

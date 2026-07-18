@@ -5,7 +5,8 @@ the request dependency for retrieving clean database connections.
 """
 from __future__ import annotations
 
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -36,6 +37,7 @@ def get_db() -> Generator[Session, None, None]:
 
     Yields:
         An active SQLAlchemy Session instance.
+
     """
     db: Session = SessionLocal()
     try:

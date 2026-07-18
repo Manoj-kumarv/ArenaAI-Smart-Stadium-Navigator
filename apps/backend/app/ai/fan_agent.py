@@ -1,12 +1,11 @@
-"""
-Fan Assistant Agent — answers fan queries in English, Spanish, and Arabic.
+"""Fan Assistant Agent — answers fan queries in English, Spanish, and Arabic.
 Supports RTL (Arabic) responses.
 """
 from __future__ import annotations
 
-from app.ai.gemini_client import call_gemini_json
 from app.ai.fallback import fan_fallback
-from app.ai.filters import check_prompt_injection, check_pii_in_input, scrub_pii_from_output
+from app.ai.filters import check_pii_in_input, check_prompt_injection, scrub_pii_from_output
+from app.ai.gemini_client import call_gemini_json
 
 SCHEMA_KEYS = {"answer_en", "answer_es", "answer_ar", "confidence"}
 

@@ -35,6 +35,7 @@ async def ask_fan_assistant(
 
     Returns:
         A dict containing trilingual answers, confidence score, and used_ai flag.
+
     """
     # Security filters on query
     check_prompt_injection(payload.query)

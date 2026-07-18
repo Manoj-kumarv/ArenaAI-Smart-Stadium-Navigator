@@ -9,8 +9,9 @@ import asyncio
 import json
 import logging
 import random
-from datetime import datetime, timezone, timedelta
-from typing import Any, Callable, Generator
+from collections.abc import Callable, Generator
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from fastapi import WebSocket
 from sqlalchemy.orm import Session
@@ -44,6 +45,7 @@ def register(ws: WebSocket) -> None:
 
     Args:
         ws: The new WebSocket connection.
+
     """
     _connections.add(ws)
     logger.debug("Registered new WebSocket connection. Active count: %d", len(_connections))
@@ -54,6 +56,7 @@ def unregister(ws: WebSocket) -> None:
 
     Args:
         ws: The WebSocket connection to remove.
+
     """
     _connections.discard(ws)
     logger.debug("Unregistered WebSocket connection. Active count: %d", len(_connections))
@@ -64,6 +67,7 @@ async def _broadcast(payload: dict[str, Any]) -> None:
 
     Args:
         payload: Data dictionary to broadcast.
+
     """
     dead: set[WebSocket] = set()
     message = json.dumps(payload)
@@ -82,6 +86,7 @@ def _init_bases(zones: list[Zone]) -> None:
 
     Args:
         zones: The database zones list.
+
     """
     for z in zones:
         if z.id in _HOT_ZONES:
@@ -101,6 +106,7 @@ def _step_density(zone_id: str, current: float) -> float:
 
     Returns:
         The new calculated density fraction.
+
     """
     base = _zone_bases.get(zone_id, 0.4)
     noise = random.gauss(0, SIMULATION_NOISE_STD_DEV)
@@ -119,6 +125,7 @@ async def telemetry_loop(
 
     Args:
         get_db_fn: Function returning a database session generator.
+
     """
     await asyncio.sleep(TELEMETRY_STARTUP_DELAY_SECONDS)
 
@@ -147,7 +154,7 @@ async def telemetry_loop(
 
                 zone.density_pct = capped
                 zone.color_state = color
-                zone.updated_at = datetime.now(timezone.utc)
+                zone.updated_at = datetime.now(UTC)
 
                 # Record history
                 db.add(ZoneDensityHistory(
@@ -161,7 +168,7 @@ async def telemetry_loop(
                     "density_pct": round(capped, 4),
                     "color_state": color.value,
                     "was_capped": was_capped,
-                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "ts": datetime.now(UTC).isoformat(),
                 })
 
             # Periodic cleanup of old history rows
@@ -177,7 +184,7 @@ async def telemetry_loop(
             await _broadcast({
                 "type": "telemetry",
                 "data": updates,
-                "server_ts": datetime.now(timezone.utc).isoformat(),
+                "server_ts": datetime.now(UTC).isoformat(),
             })
 
         except Exception as exc:

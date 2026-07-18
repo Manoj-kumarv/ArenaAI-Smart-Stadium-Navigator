@@ -1,11 +1,11 @@
-"""
-Tests for Strict Domain Boundary Rules and Guardrails.
+"""Tests for Strict Domain Boundary Rules and Guardrails.
 Verifies that the fan assistant prompt contains strict rules rejecting out-of-domain topics
 (math, coding, general knowledge) and validates the agent behavior.
 """
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from app.ai.fan_agent import PROMPT_TEMPLATE, run_fan_agent
@@ -32,9 +32,9 @@ async def test_fan_agent_handles_domain_refusal_response():
 
     with patch("app.ai.fan_agent.call_gemini_json", new_callable=AsyncMock) as mock_call:
         mock_call.return_value = mock_refusal
-        
+
         result = await run_fan_agent("What is 2+9*23-5687")
-        
+
         assert result["used_ai"] is True
         assert "stadium-related questions" in result["answer_en"] or "Stadium" in result["answer_en"]
         assert result["confidence"] == 1.0
@@ -47,9 +47,9 @@ async def test_fan_agent_fallback_on_invalid_response():
     with patch("app.ai.fan_agent.call_gemini_json", new_callable=AsyncMock) as mock_call:
         # Return invalid dictionary schema
         mock_call.return_value = {"bad_key": "some text"}
-        
+
         result = await run_fan_agent("Where is gate A?")
-        
+
         assert result["used_ai"] is False
         assert "confidence" in result
         assert 0.0 <= result["confidence"] <= 1.0

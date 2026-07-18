@@ -51,6 +51,7 @@ async def create_broadcast(
     Raises:
         NotFoundError: If the incident does not exist.
         BroadcastAtomicityError: If any of the languages fail to generate.
+
     """
     incident = db.get(Incident, payload.incident_id)
     if not incident:
@@ -106,6 +107,7 @@ async def list_broadcasts(
 
     Returns:
         A list of BroadcastLog entities.
+
     """
     return db.query(BroadcastLog).order_by(BroadcastLog.created_at.desc()).limit(50).all()
 
@@ -133,6 +135,7 @@ async def list_audit_log(
 
     Returns:
         An AuditPage object with list items and pagination metadata.
+
     """
     q = db.query(AuditLog)
     total = q.count()

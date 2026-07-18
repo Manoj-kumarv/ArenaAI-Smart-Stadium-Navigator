@@ -1,5 +1,4 @@
-"""
-Property tests for zone color thresholds and density cap.
+"""Property tests for zone color thresholds and density cap.
 
 Property 1 — color thresholds (parametrized boundary values)
 Property 2 — density_pct > 1.0 is capped to 1.0
@@ -7,11 +6,11 @@ Property 2 — density_pct > 1.0 is capped to 1.0
 from __future__ import annotations
 
 import pytest
-from hypothesis import given, settings as h_settings
+from hypothesis import given
+from hypothesis import settings as h_settings
 from hypothesis import strategies as st
 
 from app.models import ColorState, cap_density, density_to_color
-
 
 # ─── Property 1: exact boundary checks ───────────────────────────────────────
 
@@ -71,9 +70,10 @@ def test_cap_always_in_range(raw: float):
 
 # ─── Zones API Integration Tests ──────────────────────────────────────────────
 
-from tests.conftest import ops_headers, fan_headers
 from unittest.mock import AsyncMock, patch
+
 from app.models import Zone, ZoneType
+from tests.conftest import ops_headers
 
 
 def _seed_zone(db) -> Zone:

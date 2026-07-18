@@ -1,5 +1,4 @@
-"""
-Request size limiter middleware.
+"""Request size limiter middleware.
 
 Protects the application against Denial of Service (DoS) attacks
 by rejecting request bodies larger than a configured limit.
@@ -16,7 +15,7 @@ from app.config import settings
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
     """Middleware enforcing a limit on request body size."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # noqa: ANN001
+    async def dispatch(self, request: Request, call_next) -> Response:
         """Intercept the request and check the Content-Length header.
 
         Args:
@@ -25,6 +24,7 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
 
         Returns:
             An HTTP 413 response if size limit exceeded, otherwise delegates.
+
         """
         content_length = request.headers.get("content-length")
         if content_length:

@@ -48,6 +48,7 @@ async def signup(
 
     Raises:
         AlreadyExistsError: If the username or email is already registered.
+
     """
     if db.query(User).filter(
         (User.username == payload.username) | (User.email == payload.email)
@@ -92,6 +93,7 @@ async def login(
     Raises:
         AuthenticationError: If credentials are invalid.
         AuthorizationError: If the user account is disabled.
+
     """
     user = db.query(User).filter(User.username == payload.username).first()
     if not user or not verify_password(payload.password, user.hashed_password):
@@ -130,6 +132,7 @@ async def refresh(
 
     Raises:
         AuthenticationError: If the refresh token is invalid or user is not found.
+
     """
     try:
         data = jwt.decode(payload.refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -159,6 +162,7 @@ async def me(current_user: Annotated[User, Depends(get_current_user)]) -> dict[s
 
     Returns:
         A dict containing user metadata (id, username, role).
+
     """
     return {
         "id": current_user.id,

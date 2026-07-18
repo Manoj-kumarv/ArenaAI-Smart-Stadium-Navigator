@@ -1,5 +1,4 @@
-"""
-Structured logging configuration for ArenaIQ.
+"""Structured logging configuration for ArenaIQ.
 
 Provides JSON-formatted log output with correlation IDs for
 production observability, and human-readable output for development.
@@ -44,6 +43,7 @@ class StructuredFormatter(logging.Formatter):
 
         Returns:
             A JSON-encoded string representing the log entry.
+
         """
         log_entry: dict[str, Any] = {
             "timestamp": self.formatTime(record, self.datefmt),
@@ -76,6 +76,7 @@ def setup_logging(
     Args:
         level: Log level string (DEBUG, INFO, WARNING, ERROR).
         structured: If True, use JSON format; otherwise human-readable.
+
     """
     root_logger = logging.getLogger()
     root_logger.setLevel(getattr(logging, level.upper(), logging.INFO))

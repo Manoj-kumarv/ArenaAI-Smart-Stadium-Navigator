@@ -1,12 +1,11 @@
-"""
-Crowd Agent — explains zone congestion and recommends actions.
+"""Crowd Agent — explains zone congestion and recommends actions.
 Returns strict JSON; retries once on schema mismatch; falls back to rule-based.
 """
 from __future__ import annotations
 
-from app.ai.gemini_client import call_gemini_json
 from app.ai.fallback import crowd_fallback
-from app.models import ColorState, density_to_color
+from app.ai.gemini_client import call_gemini_json
+from app.models import density_to_color
 
 SCHEMA_KEYS = {"zone_id", "cause", "recommendation", "confidence"}
 

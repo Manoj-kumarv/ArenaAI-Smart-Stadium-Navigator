@@ -30,6 +30,7 @@ def _ensure_client() -> bool:
 
     Returns:
         True if the client is ready for calls, False if API key is missing.
+
     """
     global _client_initialized
     if not _GENAI_AVAILABLE or not settings.GEMINI_API_KEY.strip():
@@ -61,6 +62,7 @@ async def call_gemini(
 
     Returns:
         The response text or None if Gemini call fails or timeouts.
+
     """
     if not _ensure_client():
         return None
@@ -78,7 +80,7 @@ async def call_gemini(
             timeout=float(AI_REQUEST_TIMEOUT_SECONDS),
         )
         return response.text
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.warning("Gemini call timed out after %ds", AI_REQUEST_TIMEOUT_SECONDS)
         return None
     except Exception as exc:
@@ -98,6 +100,7 @@ async def call_gemini_json(
 
     Returns:
         Parsed JSON dictionary or None if decoding/generation fails.
+
     """
     raw = await call_gemini(prompt, **kwargs)
     if raw is None:
