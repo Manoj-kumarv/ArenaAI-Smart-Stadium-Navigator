@@ -137,7 +137,7 @@ async def refresh(
     try:
         data = jwt.decode(payload.refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         if data.get("type") != "refresh":
-            raise AuthenticationError("Invalid refresh token.")
+            raise AuthenticationError("Invalid refresh token.").to_http_exception()
         user_id = data.get("sub")
     except JWTError as exc:
         raise AuthenticationError(f"Invalid refresh token: {exc}").to_http_exception()
