@@ -2,23 +2,24 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import pytest
 from unittest.mock import MagicMock, patch
-from fastapi import status
-from jose import jwt
 
-from app.auth import verify_password, get_current_user, get_password_hash, create_access_token, create_refresh_token
-from app.ai.fallback import _classify_query, _classify_incident_severity
+import pytest
+from fastapi import HTTPException, status
+from jose import jwt
+from pydantic import ValidationError
+
 from app.ai.crowd_agent import _validate as validate_crowd
+from app.ai.fallback import _classify_incident_severity, _classify_query
 from app.ai.fan_agent import _validate as validate_fan
 from app.ai.incident_agent import _validate as validate_incident
-from app.middleware.correlation import get_correlation_id
-from app.logging_config import StructuredFormatter, setup_logging
-from app.models import User, UserRole, Incident, IncidentStatus, Zone
-from app.telemetry import telemetry_loop
+from app.auth import create_access_token, create_refresh_token, get_current_user, get_password_hash, verify_password
 from app.config import settings
-from tests.conftest import ops_headers, fan_headers
-
+from app.logging_config import StructuredFormatter, setup_logging
+from app.middleware.correlation import get_correlation_id
+from app.models import Incident, IncidentStatus, User, UserRole, Zone
+from app.telemetry import telemetry_loop
+from tests.conftest import fan_headers, ops_headers
 
 # ─── Part 1: Request Size Middleware ──────────────────────────────────────────
 
@@ -108,21 +109,21 @@ def test_verify_password_exception():
 
 
 def test_get_current_user_jwt_exceptions(db):
-    with pytest.raises(Exception):
+    with pytest.raises(HTTPException):
         get_current_user("invalid.token.here", db)
 
 
 def test_get_current_user_no_sub(db):
     token = jwt.encode({"role": "fan"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    with pytest.raises(Exception):
+    with pytest.raises(HTTPException):
         get_current_user(token, db)
 
 
 def test_get_current_user_missing_or_inactive(db):
     token_missing = create_access_token(9999, "fan")
-    with pytest.raises(Exception):
+    with pytest.raises(HTTPException):
         get_current_user(token_missing, db)
-    
+
     inactive_user = User(
         username="inactive_u",
         email="inactive@test.local",
@@ -133,7 +134,7 @@ def test_get_current_user_missing_or_inactive(db):
     db.add(inactive_user)
     db.commit()
     token_inactive = create_access_token(inactive_user.id, "fan")
-    with pytest.raises(Exception):
+    with pytest.raises(HTTPException):
         get_current_user(token_inactive, db)
 
 
@@ -230,7 +231,7 @@ def test_broadcast_atomicity_error(mock_gen, client, db):
     inc = Incident(title="T", description="D", status=IncidentStatus.open)
     db.add(inc)
     db.commit()
-    
+
     mock_gen.return_value = {"message_en": "", "message_es": "Spanish", "message_ar": "Arabic"}
     res = client.post("/api/broadcast", json={"incident_id": inc.id}, headers=ops_headers(client))
     assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -326,15 +327,15 @@ def test_get_zone_success(client, db):
 
 def test_schema_validate_action_exception():
     from app.schemas import ZoneActionRequest
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         ZoneActionRequest(zone_id="1", action="invalid")
 
 
 def test_pii_filters_ssn_and_card():
     from app.ai.filters import check_pii_in_input
-    with pytest.raises(Exception):
+    with pytest.raises(HTTPException):
         check_pii_in_input("my SSN is 123-45-6789")
-    with pytest.raises(Exception):
+    with pytest.raises(HTTPException):
         check_pii_in_input("card number 1234-5678-9012-3456")
 
 
@@ -358,20 +359,22 @@ async def test_telemetry_loop_exceptions_and_cleanup(db):
     mock_zone.id = "gate_a"
     mock_zone.zone_type.value = "gate"
     mock_db.query.return_value.all.side_effect = [[mock_zone], Exception("Loop database error")]
-    
+
     def mock_db_fn():
         yield mock_db
-    
-    with patch("app.telemetry.TELEMETRY_STARTUP_DELAY_SECONDS", 0.001):
-        with patch("app.telemetry.TELEMETRY_INTERVAL_MIN_SECONDS", 0.001):
-            with patch("app.telemetry.TELEMETRY_INTERVAL_MAX_SECONDS", 0.002):
-                task = asyncio.create_task(telemetry_loop(mock_db_fn))
-                await asyncio.sleep(0.3)
-                task.cancel()
-                try:
-                    await task
-                except (Exception, asyncio.CancelledError):
-                    pass
+
+    with (
+        patch("app.telemetry.TELEMETRY_STARTUP_DELAY_SECONDS", 0.001),
+        patch("app.telemetry.TELEMETRY_INTERVAL_MIN_SECONDS", 0.001),
+        patch("app.telemetry.TELEMETRY_INTERVAL_MAX_SECONDS", 0.002),
+    ):
+        task = asyncio.create_task(telemetry_loop(mock_db_fn))
+        await asyncio.sleep(0.3)
+        task.cancel()
+        try:
+            await task
+        except (Exception, asyncio.CancelledError):
+            pass
 
 
 @pytest.mark.asyncio
@@ -383,14 +386,16 @@ async def test_telemetry_loop_successful_cleanup(db):
     def dummy_db_fn():
         yield db
 
-    with patch("app.telemetry.TELEMETRY_STARTUP_DELAY_SECONDS", 0.001):
-        with patch("app.telemetry.TELEMETRY_INTERVAL_MIN_SECONDS", 0.001):
-            with patch("app.telemetry.TELEMETRY_INTERVAL_MAX_SECONDS", 0.002):
-                with patch("app.telemetry.TELEMETRY_CLEANUP_INTERVAL_SECONDS", -1):
-                    task = asyncio.create_task(telemetry_loop(dummy_db_fn))
-                    await asyncio.sleep(0.3)
-                    task.cancel()
-                    try:
-                        await task
-                    except (Exception, asyncio.CancelledError):
-                        pass
+    with (
+        patch("app.telemetry.TELEMETRY_STARTUP_DELAY_SECONDS", 0.001),
+        patch("app.telemetry.TELEMETRY_INTERVAL_MIN_SECONDS", 0.001),
+        patch("app.telemetry.TELEMETRY_INTERVAL_MAX_SECONDS", 0.002),
+        patch("app.telemetry.TELEMETRY_CLEANUP_INTERVAL_SECONDS", -1),
+    ):
+        task = asyncio.create_task(telemetry_loop(dummy_db_fn))
+        await asyncio.sleep(0.3)
+        task.cancel()
+        try:
+            await task
+        except (Exception, asyncio.CancelledError):
+            pass
