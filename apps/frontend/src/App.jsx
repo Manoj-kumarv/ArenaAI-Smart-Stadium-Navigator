@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
-import { AuthProvider, useAuth } from './AuthContext';
+import { AuthProvider } from './AuthContext';
+import { useAuth } from './hooks/useAuth';
 import AuthPage from './AuthPage';
 import CommandCenter from './components/CommandCenter';
 import FanPortal from './components/FanPortal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { api } from './api';
 
+/**
+ * Main application shell containing navigation and view routing.
+ * Accessible to authenticated users only.
+ * 
+ * @returns {React.ReactElement} The rendered Shell component.
+ */
 function Shell() {
-  const { token, role, logout, user } = useAuth();
+  const { token, role, logout } = useAuth();
   const [view, setView] = useState('map');
   const [zones, setZones] = useState([]);
 
@@ -23,12 +31,19 @@ function Shell() {
 
   return (
     <div className="app-shell">
+      {/* Skip link for keyboard users (must be first focusable element) */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       {/* Top navigation bar */}
       <header className="topbar" role="banner">
         <div className="topbar-brand">
           <div className="logo-icon" aria-hidden="true">🏟</div>
-          <span>ArenaIQ</span>
-          <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>FIFA World Cup 2026</span>
+          <h1 style={{ margin: 0, fontSize: '1rem', display: 'inline-flex', alignItems: 'baseline', gap: '0.35rem' }}>
+            <span style={{ fontWeight: 700 }}>ArenaIQ</span>
+            <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>FIFA World Cup 2026</span>
+          </h1>
         </div>
 
         <nav className="topbar-nav" role="navigation" aria-label="Main navigation">
@@ -59,7 +74,9 @@ function Shell() {
             className="btn btn-secondary btn-sm"
             onClick={logout}
             aria-label="Sign out"
-          >Sign out</button>
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
@@ -68,24 +85,19 @@ function Shell() {
         <div aria-live="polite" className="sr-only" aria-label="Page navigation">
           {view === 'map' ? 'Operations view' : 'Fan portal view'}
         </div>
-        {view === 'map' ? <CommandCenter /> : <FanPortal zones={zones} />}
+        <ErrorBoundary>
+          {view === 'map' ? <CommandCenter /> : <FanPortal zones={zones} />}
+        </ErrorBoundary>
       </main>
-
-      {/* Skip link for keyboard users */}
-      <a
-        href="#main-content"
-        className="sr-only"
-        style={{
-          position: 'absolute', top: '-999px',
-          ':focus': { top: '0' }
-        }}
-      >
-        Skip to main content
-      </a>
     </div>
   );
 }
 
+/**
+ * Root component of the application. Wraps the shell in AuthProvider.
+ * 
+ * @returns {React.ReactElement} The root app element.
+ */
 export default function App() {
   return (
     <AuthProvider>

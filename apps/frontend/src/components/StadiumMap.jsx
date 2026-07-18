@@ -1,24 +1,32 @@
-import React, { useEffect, useRef, useState } from 'react';
-
-/**
- * colorState → CSS class (also used in frontend unit tests)
- */
-export function colorClass(state) {
-  const map = { green: 'zone-green', yellow: 'zone-yellow', red: 'zone-red', critical: 'zone-critical' };
-  return map[state] || 'zone-green';
-}
-
-/**
- * colorState → accessible label
- */
-export function colorLabel(state) {
-  const map = { green: 'Low', yellow: 'Moderate', red: 'High', critical: 'Critical' };
-  return map[state] || state;
-}
+import React from 'react';
+import { colorClass, colorLabel } from '../utils/colorHelpers';
 
 const FIELD_W = 800;
 const FIELD_H = 540;
 
+/**
+ * @typedef {Object} Zone
+ * @property {string} id - Unique identifier.
+ * @property {string} name - Human readable name.
+ * @property {number} density_pct - Density value between 0.0 and 1.0.
+ * @property {string} color_state - 'green', 'yellow', 'red', 'critical'.
+ * @property {boolean} is_step_free - Flag for step-free access.
+ * @property {boolean} is_low_noise - Flag for low noise levels.
+ * @property {number} x - X coordinate.
+ * @property {number} y - Y coordinate.
+ * @property {number} w - Width.
+ * @property {number} h - Height.
+ */
+
+/**
+ * SVG interactive group element for a single zone.
+ *
+ * @param {Object} props
+ * @param {Zone} props.zone - Zone data.
+ * @param {function(Zone): void} props.onClick - Click event handler.
+ * @param {boolean} props.a11yMode - Whether accessibility highlighting is active.
+ * @returns {React.ReactElement} The zone SVG representation.
+ */
 function ZoneRect({ zone, onClick, a11yMode }) {
   const cls = colorClass(zone.color_state);
   const isAccessible = zone.is_step_free || zone.is_low_noise;
@@ -58,6 +66,15 @@ function ZoneRect({ zone, onClick, a11yMode }) {
   );
 }
 
+/**
+ * StadiumMap rendering the SVG Digital Twin interface.
+ *
+ * @param {Object} props
+ * @param {Zone[]} props.zones - List of zones.
+ * @param {function(Zone): void} props.onZoneClick - Zone click callback.
+ * @param {boolean} props.a11yMode - Accessibility highlighting mode flag.
+ * @returns {React.ReactElement} The SVG container.
+ */
 export default function StadiumMap({ zones, onZoneClick, a11yMode }) {
   return (
     <svg

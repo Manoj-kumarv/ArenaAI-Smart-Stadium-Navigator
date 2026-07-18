@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { api } from './api';
-
-const AuthCtx = createContext(null);
+import { AuthCtx } from './AuthCtx';
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('arenaiq_token'));
@@ -55,5 +54,3 @@ export function AuthProvider({ children }) {
     </AuthCtx.Provider>
   );
 }
-
-export const useAuth = () => useContext(AuthCtx);

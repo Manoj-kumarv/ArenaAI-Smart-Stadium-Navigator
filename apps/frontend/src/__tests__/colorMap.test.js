@@ -3,7 +3,7 @@
  * Run with: npm test
  */
 import { describe, it, expect } from 'vitest';
-import { colorClass, colorLabel } from '../components/StadiumMap';
+import { colorClass, colorLabel } from '../utils/colorHelpers';
 
 // ─── Color mapping tests ───────────────────────────────────────────────────────
 

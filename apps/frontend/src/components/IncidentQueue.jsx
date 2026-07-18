@@ -1,13 +1,27 @@
 import React, { useState } from 'react';
 import { api } from '../api';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
+/**
+ * Renders a CSS-styled status badge for a given incident severity level.
+ *
+ * @param {string} sev - Incident severity ('low', 'medium', 'high', 'critical').
+ * @returns {React.ReactElement} The badge element.
+ */
 function severityBadge(sev) {
   return <span className={`badge badge-${sev}`}>{sev}</span>;
 }
 
+/**
+ * Modal displaying AI-driven resolution results and actions taken.
+ *
+ * @param {Object} props
+ * @param {Object} props.result - The resolution result API response.
+ * @param {function(): void} props.onClose - Modal close handler.
+ * @returns {React.ReactElement|null} The modal overlay.
+ */
 function ResolutionModal({ result, onClose }) {
   if (!result) return null;
   const r = result.ai_result || {};
@@ -54,6 +68,15 @@ function ResolutionModal({ result, onClose }) {
   );
 }
 
+/**
+ * IncidentQueue component rendering active/resolved incidents.
+ *
+ * @param {Object} props
+ * @param {Array.<Object>} props.incidents - List of incidents to display.
+ * @param {function(): void} props.onRefresh - Callback to refresh lists.
+ * @param {function(Object): void} props.onBroadcast - Callback to initiate broadcast.
+ * @returns {React.ReactElement} The incident queue container.
+ */
 export default function IncidentQueue({ incidents, onRefresh, onBroadcast }) {
   const { token, role } = useAuth();
   const [resolving, setResolving] = useState({});

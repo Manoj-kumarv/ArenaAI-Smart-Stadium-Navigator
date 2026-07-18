@@ -1,0 +1,64 @@
+[project]
+name = "arenaiq-smart-stadium"
+version = "1.0.0"
+description = "GenAI-powered stadium operations platform for FIFA World Cup 2026"
+requires-python = ">=3.11"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = ["apps/backend"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "D",    # pydocstyle
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "S",    # bandit (security)
+    "T20",  # flake8-print
+    "SIM",  # flake8-simplify
+    "TCH",  # type-checking
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "D100",   # Missing docstring in public module (handled per-file)
+    "D104",   # Missing docstring in public package
+    "D203",   # 1 blank line required before class docstring
+    "D213",   # Multi-line docstring summary should start at the second line
+    "S101",   # Use of assert detected (needed in tests)
+    "B008",   # Do not perform function call in argument defaults (FastAPI Depends)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D", "S101", "T20"]
+"scripts/**/*.py" = ["D", "T20"]
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+testpaths = ["apps/backend/tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[tool.coverage.run]
+source = ["apps/backend/app"]
+omit = ["*/tests/*", "*/scripts/*"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 85

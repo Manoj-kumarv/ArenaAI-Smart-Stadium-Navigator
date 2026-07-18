@@ -1,135 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, Legend,
-} from 'recharts';
-import StadiumMap, { colorClass } from './StadiumMap';
+import StadiumMap from './StadiumMap';
 import KPIBar from './KPIBar';
 import IncidentQueue from './IncidentQueue';
 import BroadcastPanel from './BroadcastPanel';
+import AIPanel from './AIPanel';
+import DensityChart from './DensityChart';
 import { api, WS_URL } from '../api';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../hooks/useAuth';
+import { STALE_THRESHOLD } from '../constants';
 
-const STALE_THRESHOLD = 5000; // ms
-
-// AI Panel shown when a zone is clicked
-function AIPanel({ zone, onClose, token }) {
-  const [analysis, setAnalysis] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
-  const [actionMsg, setActionMsg] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true); setErr(''); setAnalysis(null);
-    api.analyseZone(zone.id, token)
-      .then(r => { if (!cancelled) { setAnalysis(r); setLoading(false); } })
-      .catch(e => { if (!cancelled) { setErr(e.message); setLoading(false); } });
-    return () => { cancelled = true; };
-  }, [zone.id, token]);
-
-  const doAction = async (action) => {
-    setActionMsg('');
-    try {
-      await api.zoneAction({ zone_id: zone.id, action, detail: `Manual ${action} for ${zone.name}` }, token);
-      setActionMsg(`✓ '${action}' executed and logged`);
-    } catch (e) {
-      setActionMsg(`✗ ${e.message}`);
-    }
-  };
-
-  return (
-    <div className="ai-panel" role="complementary" aria-label={`AI analysis for ${zone.name}`}>
-      <div className="ai-panel-header">
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '.92rem' }}>{zone.name}</div>
-          <span className={`badge badge-${zone.color_state}`} style={{ marginTop: '.25rem', display: 'inline-flex' }}>
-            {Math.round((zone.density_pct || 0) * 100)}% · {zone.color_state}
-          </span>
-        </div>
-        <button className="btn-icon" onClick={onClose} aria-label="Close AI panel">✕</button>
-      </div>
-
-      <div className="ai-panel-body">
-        {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}><span className="spinner" aria-label="Analysing…" /></div>}
-        {err && <p className="form-error">⚠ {err}</p>}
-
-        {analysis && (
-          <>
-            <div>
-              <div className="ai-label">Cause</div>
-              <p className="ai-text">{analysis.cause}</p>
-            </div>
-            <div>
-              <div className="ai-label">Recommendation</div>
-              <p className="ai-text">{analysis.recommendation}</p>
-            </div>
-            <div>
-              <div className="ai-label">Confidence</div>
-              <div className="confidence-bar">
-                <div className="confidence-fill" style={{ width: `${Math.round(analysis.confidence * 100)}%` }} />
-              </div>
-              <div className="text-xs text-muted" style={{ marginTop: '.25rem' }}>
-                {Math.round(analysis.confidence * 100)}% · {analysis.used_ai ? '✨ Gemini AI' : '📋 Rule-based'}
-              </div>
-            </div>
-
-            <div className="ai-actions">
-              <div className="ai-label">Quick Actions</div>
-              {actionMsg && <p className="text-xs" style={{ color: actionMsg.startsWith('✓') ? 'var(--green)' : 'var(--red)' }}>{actionMsg}</p>}
-              <button id={`action-broadcast-${zone.id}`} className="btn btn-secondary btn-sm" onClick={() => doAction('broadcast')}>
-                📢 Broadcast
-              </button>
-              <button id={`action-volunteers-${zone.id}`} className="btn btn-secondary btn-sm" onClick={() => doAction('deploy_volunteers')}>
-                🦺 Deploy Volunteers
-              </button>
-              <button id={`action-signage-${zone.id}`} className="btn btn-secondary btn-sm" onClick={() => doAction('update_signage')}>
-                🪧 Update Signage
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Mini density history chart
-function DensityChart({ history }) {
-  if (!history || history.length === 0) return null;
-  const COLORS = ['#3b82f6', '#22c55e', '#eab308', '#ef4444', '#a855f7'];
-  const zoneIds = [...new Set(history.map(h => h.zone_id))].slice(0, 5);
-
-  const byTime = {};
-  history.forEach(h => {
-    const t = new Date(h.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    if (!byTime[t]) byTime[t] = { t };
-    byTime[t][h.zone_id] = Math.round(h.density_pct * 100);
-  });
-  const data = Object.values(byTime).slice(-30);
-
-  return (
-    <div className="chart-wrap" aria-label="Zone density trend chart">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-          <CartesianGrid stroke="rgba(255,255,255,.05)" strokeDasharray="3 3" />
-          <XAxis dataKey="t" tick={{ fill: '#4a5a78', fontSize: 9 }} interval="preserveStartEnd" />
-          <YAxis domain={[0, 100]} tick={{ fill: '#4a5a78', fontSize: 9 }} unit="%" />
-          <Tooltip
-            contentStyle={{ background: '#131928', border: '1px solid #1e2d47', borderRadius: 8, fontSize: 11 }}
-            labelStyle={{ color: '#8a9bb8' }}
-          />
-          <Legend wrapperStyle={{ fontSize: 10, color: '#8a9bb8' }} />
-          {zoneIds.map((id, i) => (
-            <Line key={id} type="monotone" dataKey={id} stroke={COLORS[i % COLORS.length]}
-              dot={false} strokeWidth={1.5} name={id.replace(/_/g, ' ')} />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
+/**
+ * CommandCenter dashboard component for ops_staff.
+ * Displays live digital twin, real-time KPI metrics, incident queues, and PA broadcasts.
+ *
+ * @returns {React.ReactElement} The CommandCenter dashboard.
+ */
 export default function CommandCenter() {
   const { token, role } = useAuth();
   const [zones, setZones]           = useState([]);
@@ -141,12 +26,15 @@ export default function CommandCenter() {
   const [wsStatus, setWsStatus]     = useState('disconnected');
   const [stale, setStale]           = useState(false);
   const [densityHistory, setDensityHistory] = useState([]);
+  const [selectedBroadcastIncidentId, setSelectedBroadcastIncidentId] = useState('');
   const wsRef = useRef(null);
   const lastTsRef = useRef(Date.now());
   const kpiRef = useRef(null);
   const isOps = role === 'ops_staff';
 
-  // Fetch initial data
+  /**
+   * Refreshes dashboard data.
+   */
   const refresh = useCallback(async () => {
     try {
       const [z, kp] = await Promise.all([api.getZones(token), api.kpi()]);
@@ -165,15 +53,23 @@ export default function CommandCenter() {
     }
   }, [token, isOps]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  // WebSocket telemetry
+  // WebSocket telemetry connection handling
   useEffect(() => {
     const connect = () => {
       const ws = new WebSocket(WS_URL);
       wsRef.current = ws;
-      ws.onopen  = () => { setWsStatus('connected'); setStale(false); };
-      ws.onclose = () => { setWsStatus('disconnected'); setTimeout(connect, 3000); };
+      ws.onopen  = () => {
+        setWsStatus('connected');
+        setStale(false);
+      };
+      ws.onclose = () => {
+        setWsStatus('disconnected');
+        setTimeout(connect, 3000);
+      };
       ws.onerror = () => ws.close();
       ws.onmessage = (e) => {
         const msg = JSON.parse(e.data);
@@ -198,18 +94,30 @@ export default function CommandCenter() {
       };
     };
     connect();
-    // Stale detection
+
+    // Telemetry stale state detection
     const staleTimer = setInterval(() => {
       if (Date.now() - lastTsRef.current > STALE_THRESHOLD) setStale(true);
     }, 1000);
-    return () => { wsRef.current?.close(); clearInterval(staleTimer); };
+
+    return () => {
+      wsRef.current?.close();
+      clearInterval(staleTimer);
+    };
   }, []);
 
+  /**
+   * Selection handler for triggering a PA broadcast from incident list.
+   *
+   * @param {Object} inc - Incident object.
+   */
   const handleBroadcastFor = (inc) => {
-    // scroll to broadcast panel and pre-select
-    document.getElementById('broadcast-incident-select')?.focus();
-    const sel = document.getElementById('broadcast-incident-select');
-    if (sel) { sel.value = String(inc.id); sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    setSelectedBroadcastIncidentId(String(inc.id));
+    const selectEl = document.getElementById('broadcast-incident-select');
+    if (selectEl) {
+      selectEl.scrollIntoView({ behavior: 'smooth' });
+      selectEl.focus();
+    }
   };
 
   return (
@@ -218,7 +126,7 @@ export default function CommandCenter() {
 
       {stale && (
         <div className="stale-banner" role="alert" aria-live="assertive">
-          ⚠ STALE DATA — Live telemetry feed interrupted. Last update &gt;5s ago.
+          ⚠ STALE DATA — Live telemetry feed interrupted. Last update &gt;{STALE_THRESHOLD / 1000}s ago.
         </div>
       )}
 
@@ -248,7 +156,7 @@ export default function CommandCenter() {
                 </div>
                 <span className="toggle-label">♿ Accessibility Layer</span>
               </label>
-              <div className={`ws-indicator`} aria-label={`WebSocket: ${wsStatus}`}>
+              <div className="ws-indicator" aria-label={`WebSocket: ${wsStatus}`}>
                 <div className={`ws-dot ${wsStatus === 'connected' ? 'connected' : stale ? 'stale' : ''}`} />
                 <span>{wsStatus === 'connected' ? 'Live' : 'Reconnecting…'}</span>
               </div>
@@ -284,7 +192,13 @@ export default function CommandCenter() {
                 <IncidentQueue incidents={incidents} onRefresh={refresh} onBroadcast={handleBroadcastFor} />
               </div>
               <div className="card">
-                <BroadcastPanel incidents={incidents} broadcasts={broadcasts} onRefresh={refresh} />
+                <BroadcastPanel
+                  incidents={incidents}
+                  broadcasts={broadcasts}
+                  onRefresh={refresh}
+                  selectedIncidentId={selectedBroadcastIncidentId}
+                  onSelectIncident={setSelectedBroadcastIncidentId}
+                />
               </div>
             </>
           )}

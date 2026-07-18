@@ -67,3 +67,73 @@ def test_color_always_valid(density: float):
 def test_cap_always_in_range(raw: float):
     val, _ = cap_density(raw)
     assert 0.0 <= val <= 1.0
+
+
+# ─── Zones API Integration Tests ──────────────────────────────────────────────
+
+from tests.conftest import ops_headers, fan_headers
+from unittest.mock import AsyncMock, patch
+from app.models import Zone, ZoneType
+
+
+def _seed_zone(db) -> Zone:
+    z = Zone(id="gate_a", name="Gate A", zone_type=ZoneType.gate, capacity=800, x=0, y=0, w=60, h=40)
+    db.add(z)
+    db.commit()
+    db.refresh(z)
+    return z
+
+
+def test_list_zones_success(client, db):
+    _seed_zone(db)
+    r = client.get("/api/zones", headers=ops_headers(client))
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body) >= 1
+    assert body[0]["id"] == "gate_a"
+
+
+def test_get_zone_not_found(client):
+    r = client.get("/api/zones/unknown_zone", headers=ops_headers(client))
+    assert r.status_code == 404
+
+
+def test_analyse_zone_success(client, db):
+    _seed_zone(db)
+    mock_analysis = {
+        "zone_id": "gate_a",
+        "cause": "Egress flow converging.",
+        "recommendation": "Deploy barrier.",
+        "confidence": 0.88,
+        "used_ai": True,
+    }
+    with patch("app.routers.zones.orchestrate_crowd", new_callable=AsyncMock, return_value=mock_analysis):
+        r = client.post("/api/zones/gate_a/analyse", headers=ops_headers(client))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["zone_id"] == "gate_a"
+    assert body["used_ai"] is True
+
+
+def test_zone_action_success(client, db):
+    _seed_zone(db)
+    r = client.post(
+        "/api/zones/action",
+        json={"zone_id": "gate_a", "action": "deploy_volunteers", "detail": "send two volunteers"},
+        headers=ops_headers(client),
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "ok"
+    assert body["action"] == "deploy_volunteers"
+    assert "audit_id" in body
+
+
+def test_kpi_summary_success(client, db):
+    _seed_zone(db)
+    r = client.get("/api/zones/kpi/summary")
+    assert r.status_code == 200
+    body = r.json()
+    assert "attendance" in body
+    assert "active_incidents" in body
+    assert "avg_wait_minutes" in body

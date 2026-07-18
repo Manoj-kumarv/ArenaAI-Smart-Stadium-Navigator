@@ -1,6 +1,7 @@
-"""
-Telemetry simulator — background task that mutates zone density every 2-3s
-and broadcasts updates over WebSocket to all connected clients.
+"""Telemetry simulator and WebSocket broadcast engine.
+
+Simulates drift in zone density over time and pushes telemetry updates
+via active WebSocket connections.
 """
 from __future__ import annotations
 
@@ -8,48 +9,80 @@ import asyncio
 import json
 import logging
 import random
-from datetime import datetime, timezone
-from typing import Set
+from datetime import datetime, timezone, timedelta
+from typing import Any, Callable, Generator
 
 from fastapi import WebSocket
+from sqlalchemy.orm import Session
 
+from app.constants import (
+    SIMULATION_DENSITY_MAX_OVERSHOOT,
+    SIMULATION_MEAN_REVERSION_RATE,
+    SIMULATION_NOISE_STD_DEV,
+    TELEMETRY_CLEANUP_INTERVAL_SECONDS,
+    TELEMETRY_HISTORY_RETENTION_SECONDS,
+    TELEMETRY_INTERVAL_MAX_SECONDS,
+    TELEMETRY_INTERVAL_MIN_SECONDS,
+    TELEMETRY_STARTUP_DELAY_SECONDS,
+)
 from app.models import Zone, ZoneDensityHistory, cap_density, density_to_color
 
 logger = logging.getLogger(__name__)
 
-# ─── Connected WebSocket clients ──────────────────────────────────────────────
-_connections: Set[WebSocket] = set()
+# List of currently connected WebSocket clients
+_connections: set[WebSocket] = set()
+
+# Drift baseline density values per zone
+_zone_bases: dict[str, float] = {}
+
+# Zones targeting higher baseline crowd levels (e.g. key exit/entry areas)
+_HOT_ZONES = {"gate_a", "gate_b", "gate_c", "gate_d", "concourse_north", "concourse_south"}
 
 
 def register(ws: WebSocket) -> None:
+    """Register a new active WebSocket client connection.
+
+    Args:
+        ws: The new WebSocket connection.
+    """
     _connections.add(ws)
+    logger.debug("Registered new WebSocket connection. Active count: %d", len(_connections))
 
 
 def unregister(ws: WebSocket) -> None:
+    """Remove a disconnected WebSocket client from the register.
+
+    Args:
+        ws: The WebSocket connection to remove.
+    """
     _connections.discard(ws)
+    logger.debug("Unregistered WebSocket connection. Active count: %d", len(_connections))
 
 
-async def _broadcast(payload: dict) -> None:
-    dead = set()
+async def _broadcast(payload: dict[str, Any]) -> None:
+    """Broadcast JSON payload to all active connections.
+
+    Args:
+        payload: Data dictionary to broadcast.
+    """
+    dead: set[WebSocket] = set()
     message = json.dumps(payload)
     for ws in list(_connections):
         try:
             await ws.send_text(message)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to send message over WS: %s", exc)
             dead.add(ws)
     for ws in dead:
         unregister(ws)
 
 
-# ─── Zone density simulation ──────────────────────────────────────────────────
-# Each zone has a "base" density that drifts over time with Gaussian noise
-_zone_bases: dict[str, float] = {}
-
-# Zones that tend to get crowded (gates, concourses)
-_HOT_ZONES = {"gate_a", "gate_b", "gate_c", "gate_d", "concourse_north", "concourse_south"}
-
-
 def _init_bases(zones: list[Zone]) -> None:
+    """Initialize random walk baselines for each zone type.
+
+    Args:
+        zones: The database zones list.
+    """
     for z in zones:
         if z.id in _HOT_ZONES:
             _zone_bases[z.id] = random.uniform(0.55, 0.80)
@@ -60,20 +93,34 @@ def _init_bases(zones: list[Zone]) -> None:
 
 
 def _step_density(zone_id: str, current: float) -> float:
-    """Random walk with mean-reversion toward the zone's base."""
+    """Perform Gaussian random walk drift with mean reversion toward baseline.
+
+    Args:
+        zone_id: Target zone ID.
+        current: Current density fraction.
+
+    Returns:
+        The new calculated density fraction.
+    """
     base = _zone_bases.get(zone_id, 0.4)
-    # Mean-reversion + noise
-    noise = random.gauss(0, 0.04)
-    reversion = 0.05 * (base - current)
+    noise = random.gauss(0, SIMULATION_NOISE_STD_DEV)
+    reversion = SIMULATION_MEAN_REVERSION_RATE * (base - current)
     new_val = current + noise + reversion
-    return max(0.0, min(1.05, new_val))  # allow a tiny overshoot to test cap
+    return max(0.0, min(SIMULATION_DENSITY_MAX_OVERSHOOT, new_val))
 
 
-# ─── Background simulator loop ────────────────────────────────────────────────
+async def telemetry_loop(
+    get_db_fn: Callable[[], Generator[Session, None, None]],
+) -> None:
+    """Execute the background telemetry simulation loop.
 
-async def telemetry_loop(get_db_fn) -> None:
-    """Runs forever as a FastAPI lifespan background task."""
-    await asyncio.sleep(2)  # let app finish starting
+    Runs indefinitely. Generates and commits updates, deletes older history
+    rows, and broadcasts updates over WebSockets.
+
+    Args:
+        get_db_fn: Function returning a database session generator.
+    """
+    await asyncio.sleep(TELEMETRY_STARTUP_DELAY_SECONDS)
 
     # Bootstrap zone bases
     db = next(get_db_fn())
@@ -82,9 +129,10 @@ async def telemetry_loop(get_db_fn) -> None:
     db.close()
 
     logger.info("Telemetry simulator started for %d zones", len(zones))
+    last_cleanup = datetime.utcnow()
 
     while True:
-        interval = random.uniform(2.0, 3.0)
+        interval = random.uniform(TELEMETRY_INTERVAL_MIN_SECONDS, TELEMETRY_INTERVAL_MAX_SECONDS)
         await asyncio.sleep(interval)
 
         db = next(get_db_fn())
@@ -101,7 +149,7 @@ async def telemetry_loop(get_db_fn) -> None:
                 zone.color_state = color
                 zone.updated_at = datetime.now(timezone.utc)
 
-                # Record history (keep last ~200 rows per zone via periodic cleanup)
+                # Record history
                 db.add(ZoneDensityHistory(
                     zone_id=zone.id,
                     density_pct=capped,
@@ -115,6 +163,13 @@ async def telemetry_loop(get_db_fn) -> None:
                     "was_capped": was_capped,
                     "ts": datetime.now(timezone.utc).isoformat(),
                 })
+
+            # Periodic cleanup of old history rows
+            now = datetime.utcnow()
+            if (now - last_cleanup).total_seconds() > TELEMETRY_CLEANUP_INTERVAL_SECONDS:
+                cutoff = now - timedelta(seconds=TELEMETRY_HISTORY_RETENTION_SECONDS)
+                db.query(ZoneDensityHistory).filter(ZoneDensityHistory.recorded_at < cutoff).delete()
+                last_cleanup = now
 
             db.commit()
 

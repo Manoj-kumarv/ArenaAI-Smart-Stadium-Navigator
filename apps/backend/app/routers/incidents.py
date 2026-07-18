@@ -1,27 +1,39 @@
-"""
-Incidents router — CRUD, AI-powered resolution with transactional rollback,
-audit logging, and paginated listing.
-"""
-from __future__ import annotations
+"""Incidents router.
 
+Handles incident creation, retrieval, deletion, and AI-powered resolution.
+Ensures transaction safety and immutable audit logging.
+"""
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
+from app.ai.filters import check_pii_in_input, check_prompt_injection
+from app.ai.orchestrator import orchestrate_incident
 from app.auth import get_current_user, require_role
 from app.database import get_db
+from app.exceptions import AlreadyResolvedError, NotFoundError, ResolutionRollbackError
+from app.limiter import limiter
 from app.models import (
-    AuditAction, AuditLog, Incident, IncidentStatus, User, UserRole,
+    AuditAction,
+    AuditLog,
+    Incident,
+    IncidentStatus,
+    User,
+    UserRole,
 )
 from app.schemas import (
-    IncidentCreate, IncidentOut, IncidentPage, ResolveResponse,
+    IncidentCreate,
+    IncidentOut,
+    IncidentPage,
+    ResolveResponse,
 )
-from app.ai.orchestrator import orchestrate_incident
 
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=IncidentPage)
@@ -31,7 +43,22 @@ async def list_incidents(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     status_filter: str | None = Query(default=None, alias="status"),
-):
+) -> IncidentPage:
+    """List stadium incidents in a paginated format.
+
+    Allows filtering by status ('open', 'in_progress', 'resolved').
+    Ordered by severity score (highest first) and creation date.
+
+    Args:
+        db: Database session.
+        _: Authenticated user.
+        page: Page number (1-indexed).
+        page_size: Number of items per page.
+        status_filter: Optional status filter.
+
+    Returns:
+        IncidentPage containing items list and pagination metadata.
+    """
     q = db.query(Incident)
     if status_filter:
         q = q.filter(Incident.status == status_filter)
@@ -45,17 +72,40 @@ async def list_incidents(
     return IncidentPage(items=items, total=total, page=page, page_size=page_size)
 
 
-@router.post("", response_model=IncidentOut, status_code=status.HTTP_201_CREATED,
-             dependencies=[Depends(require_role(UserRole.ops_staff))])
+@router.post(
+    "",
+    response_model=IncidentOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_role(UserRole.ops_staff))],
+)
 async def create_incident(
     payload: IncidentCreate,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(require_role(UserRole.ops_staff))],
-):
+) -> Incident:
+    """Create a new stadium incident.
+
+    Only permitted for ops_staff. Applies strict prompt injection and PII
+    input validation filters on title and description.
+
+    Args:
+        payload: Incident creation parameters.
+        db: Database session.
+        current_user: Authenticated staff member.
+
+    Returns:
+        The created Incident object.
+    """
+    # Security filters on title and description
+    check_prompt_injection(payload.title)
+    check_prompt_injection(payload.description)
+    check_pii_in_input(payload.title + " " + payload.description)
+
     incident = Incident(**payload.model_dump())
     db.add(incident)
     db.commit()
     db.refresh(incident)
+    logger.info("Created incident %d by user %s", incident.id, current_user.username)
     return incident
 
 
@@ -64,33 +114,62 @@ async def get_incident(
     incident_id: int,
     db: Annotated[Session, Depends(get_db)],
     _: Annotated[User, Depends(get_current_user)],
-):
+) -> Incident:
+    """Retrieve details of a specific incident by its unique ID.
+
+    Args:
+        incident_id: The ID of the incident to retrieve.
+        db: Database session.
+        _: Authenticated user.
+
+    Returns:
+        The Incident object.
+
+    Raises:
+        NotFoundError: If the incident does not exist.
+    """
     incident = db.get(Incident, incident_id)
     if not incident:
-        raise HTTPException(status_code=404, detail="Incident not found.")
+        raise NotFoundError("Incident", incident_id).to_http_exception()
     return incident
 
 
-@router.post("/{incident_id}/resolve", response_model=ResolveResponse,
-             dependencies=[Depends(require_role(UserRole.ops_staff))])
+@router.post(
+    "/{incident_id}/resolve",
+    response_model=ResolveResponse,
+    dependencies=[Depends(require_role(UserRole.ops_staff))],
+)
+@limiter.limit("20/minute")
 async def resolve_incident(
+    request: Request,
     incident_id: int,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(require_role(UserRole.ops_staff))],
-):
-    """
-    Transactional resolution workflow (Property 8 — rollback on failure):
-    1. Fetch incident & validate state
-    2. Write audit log (before action — append-only)
-    3. Call AI agent
-    4. Update incident status
-    5. On any step failure → revert status to 'open', delete orphan audit row
+) -> ResolveResponse:
+    """Resolve an incident using GenAI.
+
+    Only permitted for ops_staff. Enforces transaction safety (rollback
+    on AI or network failure). Tracks actions in an immutable audit log.
+
+    Args:
+        request: FastAPI request object (for rate limiting).
+        incident_id: Incident ID to resolve.
+        db: Database session.
+        current_user: Authenticated staff member.
+
+    Returns:
+        ResolveResponse detailing resolution status and AI playbook results.
+
+    Raises:
+        NotFoundError: If the incident is not found.
+        AlreadyResolvedError: If the incident is already resolved.
+        ResolutionRollbackError: If resolution fails and has been rolled back.
     """
     incident = db.get(Incident, incident_id)
     if not incident:
-        raise HTTPException(status_code=404, detail="Incident not found.")
+        raise NotFoundError("Incident", incident_id).to_http_exception()
     if incident.status == IncidentStatus.resolved:
-        raise HTTPException(status_code=400, detail="Incident is already resolved.")
+        raise AlreadyResolvedError(incident_id).to_http_exception()
 
     original_status = incident.status
     audit_row: AuditLog | None = None
@@ -129,6 +208,7 @@ async def resolve_incident(
         db.commit()
         db.refresh(audit_row)
 
+        logger.info("Resolved incident %d via AI", incident.id)
         return ResolveResponse(
             incident_id=incident.id,
             status=incident.status,
@@ -144,20 +224,31 @@ async def resolve_incident(
         if incident:
             incident.status = original_status
             db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Resolution failed and was rolled back: {str(exc)}",
-        )
+        logger.error("Failed to resolve incident %d: %s", incident_id, exc)
+        raise ResolutionRollbackError(incident_id, str(exc)).to_http_exception()
 
 
-@router.delete("/{incident_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[Depends(require_role(UserRole.ops_staff))])
+@router.delete(
+    "/{incident_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_role(UserRole.ops_staff))],
+)
 async def delete_incident(
     incident_id: int,
     db: Annotated[Session, Depends(get_db)],
-):
+) -> None:
+    """Delete an incident. Only permitted for ops_staff.
+
+    Args:
+        incident_id: Incident ID to delete.
+        db: Database session.
+
+    Raises:
+        NotFoundError: If the incident does not exist.
+    """
     incident = db.get(Incident, incident_id)
     if not incident:
-        raise HTTPException(status_code=404, detail="Incident not found.")
+        raise NotFoundError("Incident", incident_id).to_http_exception()
     db.delete(incident)
     db.commit()
+    logger.info("Deleted incident %d", incident_id)

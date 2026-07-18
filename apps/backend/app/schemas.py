@@ -176,3 +176,19 @@ class KPIResponse(BaseModel):
     avg_wait_minutes: float
     ai_actions_taken: int
     critical_zones: int
+
+
+# ─── New Added Schemas ────────────────────────────────────────────────────────
+
+class UserMeResponse(BaseModel):
+    id: int
+    username: str
+    role: str
+
+
+class ZoneActionResponse(BaseModel):
+    status: str
+    action: str
+    zone_id: str
+    audit_id: int
+    message: str

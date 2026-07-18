@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ChatBubble from './ChatBubble';
 import { api } from '../api';
 
 const SUGGESTIONS = [
@@ -9,35 +10,24 @@ const SUGGESTIONS = [
   'Where are the restrooms?',
 ];
 
-function ChatBubble({ msg }) {
-  if (msg.role === 'user') {
-    return <div className="chat-bubble user">{msg.text}</div>;
-  }
-  // assistant — show selected language
-  const lang = msg.lang || 'en';
-  const text = msg[`answer_${lang}`] || msg.answer_en || msg.text;
-  const isAr = lang === 'ar';
-  return (
-    <div className={`chat-bubble assistant${isAr ? ' ar' : ''}`} dir={isAr ? 'rtl' : 'ltr'} lang={lang}>
-      {text}
-      {msg.used_ai !== undefined && (
-        <div style={{ marginTop: '.35rem', fontSize: '.7rem', opacity: .6 }}>
-          {msg.used_ai ? '✨ Gemini AI' : '📋 Fallback'}
-          {msg.confidence !== undefined && ` · ${Math.round(msg.confidence * 100)}% confidence`}
-        </div>
-      )}
-    </div>
-  );
-}
-
+/**
+ * FanPortal component representing the visitor-facing platform dashboard.
+ * Supports trilingual Q&A and accessible zone monitoring.
+ *
+ * @param {Object} props
+ * @param {Array.<Object>} props.zones - List of all zones.
+ * @returns {React.ReactElement} The rendered FanPortal component.
+ */
 export default function FanPortal({ zones }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      answer_en: 'Hi! I\'m your ArenaIQ assistant for FIFA World Cup 2026. Ask me about directions, food, medical stations, or facilities — in English, Spanish, or Arabic!',
+      answer_en: "Hi! I'm your ArenaIQ assistant for FIFA World Cup 2026. Ask me about directions, food, medical stations, or facilities — in English, Spanish, or Arabic!",
       answer_es: '¡Hola! Soy tu asistente ArenaIQ para el Mundial FIFA 2026. Pregúntame sobre direcciones, comida, estaciones médicas o instalaciones.',
       answer_ar: 'مرحباً! أنا مساعد ArenaIQ الخاص بك لكأس العالم FIFA 2026. اسألني عن الاتجاهات والطعام والمحطات الطبية والمرافق.',
-      lang: 'en', used_ai: false, confidence: 1,
+      lang: 'en',
+      used_ai: false,
+      confidence: 1,
     }
   ]);
   const [input, setInput] = useState('');
@@ -50,10 +40,17 @@ export default function FanPortal({ zones }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  /**
+   * Sends user query to the Fan Assistant backend endpoint.
+   *
+   * @param {string} [text] - Optional quick suggestion query text.
+   */
   const send = async (text) => {
     const q = (text || input).trim();
     if (!q) return;
-    setErr(''); setInput(''); setLoading(true);
+    setErr('');
+    setInput('');
+    setLoading(true);
     setMessages(m => [...m, { role: 'user', text: q }]);
     try {
       const res = await api.askFan(q);
@@ -79,7 +76,7 @@ export default function FanPortal({ zones }) {
         <div style={{ padding: '.65rem .75rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontWeight: 700, fontSize: '.9rem' }}>🏟 Fan Assistant</div>
           <div className="lang-tabs" style={{ padding: 0 }}>
-            {['en','es','ar'].map(l => (
+            {['en', 'es', 'ar'].map(l => (
               <button
                 key={l}
                 className={`lang-tab${lang === l ? ' active' : ''}`}
@@ -110,8 +107,13 @@ export default function FanPortal({ zones }) {
         {messages.length < 3 && (
           <div style={{ padding: '.5rem .75rem', display: 'flex', flexWrap: 'wrap', gap: '.35rem' }}>
             {SUGGESTIONS.map((s, i) => (
-              <button key={i} className="btn btn-secondary btn-sm" onClick={() => send(s)}
-                aria-label={`Quick question: ${s}`} id={`suggestion-${i}`}>
+              <button
+                key={i}
+                className="btn btn-secondary btn-sm"
+                onClick={() => send(s)}
+                aria-label={`Quick question: ${s}`}
+                id={`suggestion-${i}`}
+              >
                 {s}
               </button>
             ))}
@@ -136,7 +138,9 @@ export default function FanPortal({ zones }) {
             onClick={() => send()}
             disabled={loading || !input.trim()}
             aria-label="Send message"
-          >Send</button>
+          >
+            Send
+          </button>
         </div>
       </div>
 
@@ -157,7 +161,7 @@ export default function FanPortal({ zones }) {
                     {z.is_low_noise && '🔇 Low noise'}
                   </div>
                 </div>
-                <span className={`badge badge-${z.color_state === 'green' ? 'green' : z.color_state === 'yellow' ? 'medium' : 'high'}`}>
+                <span className={`badge badge-${z.color_state === 'green' ? 'green' : z.color_state === 'yellow' ? 'medium' : z.color_state === 'red' ? 'high' : 'critical'}`}>
                   {Math.round((z.density_pct || 0) * 100)}%
                 </span>
               </div>

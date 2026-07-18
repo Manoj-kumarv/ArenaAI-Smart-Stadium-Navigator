@@ -1,1 +1,2 @@
-# app package
+"""ArenaIQ FastAPI backend application package."""
+from __future__ import annotations

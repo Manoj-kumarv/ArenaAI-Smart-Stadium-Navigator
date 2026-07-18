@@ -1,20 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
-export default function BroadcastPanel({ incidents, broadcasts, onRefresh }) {
+/**
+ * @typedef {Object} Incident
+ * @property {number} id
+ * @property {string} title
+ * @property {string} description
+ * @property {string} status
+ */
+
+/**
+ * @typedef {Object} Broadcast
+ * @property {number} id
+ * @property {number} [incident_id]
+ * @property {string} message_en
+ * @property {string} message_es
+ * @property {string} message_ar
+ * @property {boolean} used_ai
+ */
+
+/**
+ * BroadcastPanel component for generating atomic trilingual PA announcements.
+ *
+ * @param {Object} props
+ * @param {Incident[]} props.incidents - List of active incidents.
+ * @param {Broadcast[]} props.broadcasts - List of recent broadcasts.
+ * @param {function(): void} props.onRefresh - Callback to refresh lists.
+ * @param {string} props.selectedIncidentId - Currently selected incident ID.
+ * @param {function(string): void} props.onSelectIncident - Selection callback.
+ * @returns {React.ReactElement} The rendered BroadcastPanel.
+ */
+export default function BroadcastPanel({
+  incidents,
+  broadcasts,
+  onRefresh,
+  selectedIncidentId,
+  onSelectIncident,
+}) {
   const { token } = useAuth();
   const [selected, setSelected] = useState('');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
   const [latest, setLatest] = useState(null);
 
-  // Allow triggering from parent (broadcast button on incident)
-  BroadcastPanel.triggerFor = (inc) => setSelected(String(inc.id));
+  useEffect(() => {
+    if (selectedIncidentId) {
+      setSelected(selectedIncidentId);
+    }
+  }, [selectedIncidentId]);
 
+  /**
+   * Selection drop-down change handler.
+   *
+   * @param {React.ChangeEvent<HTMLSelectElement>} e
+   */
+  const handleSelectChange = (e) => {
+    const val = e.target.value;
+    setSelected(val);
+    onSelectIncident(val);
+  };
+
+  /**
+   * Action to call backend for trilingual PA broadcast generation.
+   */
   const send = async () => {
     if (!selected) return;
-    setErr(''); setLoading(true); setLatest(null);
+    setErr('');
+    setLoading(true);
+    setLatest(null);
     try {
       const res = await api.createBroadcast(parseInt(selected), token);
       setLatest(res);
@@ -41,7 +95,7 @@ export default function BroadcastPanel({ incidents, broadcasts, onRefresh }) {
             id="broadcast-incident-select"
             className="form-input form-select"
             value={selected}
-            onChange={e => setSelected(e.target.value)}
+            onChange={handleSelectChange}
           >
             <option value="">Select an incident…</option>
             {(incidents || []).filter(i => i.status !== 'resolved').map(i => (
