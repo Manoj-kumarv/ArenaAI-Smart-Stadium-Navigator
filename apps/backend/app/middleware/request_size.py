@@ -3,6 +3,7 @@
 Protects the application against Denial of Service (DoS) attacks
 by rejecting request bodies larger than a configured limit.
 """
+
 from __future__ import annotations
 
 from fastapi import Request, status
@@ -34,10 +35,7 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
                     return JSONResponse(
                         status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                         content={
-                            "detail": (
-                                f"Request entity too large. "
-                                f"Max allowed: {settings.MAX_CONTENT_LENGTH} bytes."
-                            )
+                            "detail": (f"Request entity too large. Max allowed: {settings.MAX_CONTENT_LENGTH} bytes.")
                         },
                     )
             except ValueError:

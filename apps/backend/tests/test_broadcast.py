@@ -2,6 +2,7 @@
 If any one of the 3 languages fails, the entire broadcast is treated as failed
 and nothing is stored.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -27,6 +28,7 @@ def _seed(db):
 
 
 # ─── Property 7: atomic broadcast ────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_broadcast_all_three_languages_succeed():
@@ -79,8 +81,7 @@ def test_broadcast_api_stores_all_three(client, db):
         "used_ai": True,
     }
 
-    with patch("app.routers.broadcast.generate_broadcast",
-               new_callable=AsyncMock, return_value=mock_broadcast):
+    with patch("app.routers.broadcast.generate_broadcast", new_callable=AsyncMock, return_value=mock_broadcast):
         r = client.post(
             "/api/broadcast",
             json={"incident_id": inc_id},
@@ -95,6 +96,7 @@ def test_broadcast_api_stores_all_three(client, db):
 
     # Verify persisted in DB
     from tests.conftest import TestingSessionLocal
+
     fresh_db = TestingSessionLocal()
     try:
         log = fresh_db.query(BroadcastLog).filter_by(incident_id=inc_id).first()
@@ -109,7 +111,7 @@ def test_broadcast_api_stores_all_three(client, db):
 def test_broadcast_fan_cannot_trigger(client, db):
     """Fan role cannot call broadcast endpoint."""
     from tests.conftest import fan_headers
+
     inc_id = _seed(db)
-    r = client.post("/api/broadcast", json={"incident_id": inc_id},
-                    headers=fan_headers(client))
+    r = client.post("/api/broadcast", json={"incident_id": inc_id}, headers=fan_headers(client))
     assert r.status_code == 403

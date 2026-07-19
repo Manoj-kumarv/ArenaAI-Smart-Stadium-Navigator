@@ -1,6 +1,7 @@
 """Unit tests for the WebSocket telemetry endpoint.
 Provides 100% test coverage for app/routers/ws.py.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -18,9 +19,7 @@ async def test_telemetry_ws_lifecycle():
     # Simulate a receive_text that raises WebSocketDisconnect on first call to break the keep-alive loop
     mock_ws.receive_text.side_effect = WebSocketDisconnect()
 
-    with patch("app.telemetry.register") as mock_reg, \
-         patch("app.telemetry.unregister") as mock_unreg:
-
+    with patch("app.telemetry.register") as mock_reg, patch("app.telemetry.unregister") as mock_unreg:
         await telemetry_ws(mock_ws)
 
         mock_ws.accept.assert_called_once()

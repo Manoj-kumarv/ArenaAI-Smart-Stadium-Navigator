@@ -1,5 +1,5 @@
-"""Incident/Security Agent — classifies severity and produces a resolution playbook.
-"""
+"""Incident/Security Agent — classifies severity and produces a resolution playbook."""
+
 from __future__ import annotations
 
 from app.ai.fallback import incident_fallback

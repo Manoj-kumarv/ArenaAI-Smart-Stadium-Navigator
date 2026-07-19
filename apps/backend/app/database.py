@@ -3,6 +3,7 @@
 Configures SQLAlchemy engine and SessionLocal factory, and provides
 the request dependency for retrieving clean database connections.
 """
+
 from __future__ import annotations
 
 from collections.abc import Generator
@@ -13,9 +14,7 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
 
-connect_args: dict[str, Any] = (
-    {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
-)
+connect_args: dict[str, Any] = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(settings.DATABASE_URL, connect_args=connect_args)
 """SQLAlchemy database engine."""

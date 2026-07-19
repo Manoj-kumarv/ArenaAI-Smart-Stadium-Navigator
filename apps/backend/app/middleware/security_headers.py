@@ -19,6 +19,7 @@ References:
     - MDN Security Headers: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
 
 """
+
 from __future__ import annotations
 
 from fastapi import Request
@@ -57,9 +58,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
 
         # Enforce HTTPS for 1 year including subdomains
-        response.headers["Strict-Transport-Security"] = (
-            "max-age=31536000; includeSubDomains"
-        )
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
         # Content Security Policy — restrict resource loading
         response.headers["Content-Security-Policy"] = (
@@ -77,14 +76,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Disable unnecessary browser features
         response.headers["Permissions-Policy"] = (
-            "geolocation=(), microphone=(), camera=(), "
-            "payment=(), usb=(), magnetometer=()"
+            "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=()"
         )
 
         # Prevent caching of API responses (sensitive data protection)
         if request.url.path.startswith("/api/"):
-            response.headers["Cache-Control"] = (
-                "no-store, no-cache, must-revalidate, max-age=0"
-            )
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
 
         return response

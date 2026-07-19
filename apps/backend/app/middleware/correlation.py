@@ -10,6 +10,7 @@ Usage:
     - Response headers for client-side correlation
     - AI agent calls for tracing GenAI request flows
 """
+
 from __future__ import annotations
 
 import uuid
@@ -21,9 +22,7 @@ from starlette.responses import Response
 
 # Context variable storing the current request's correlation ID.
 # Accessible from any async code within the same request context.
-correlation_id_var: ContextVar[str | None] = ContextVar(
-    "correlation_id", default=None
-)
+correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 CORRELATION_HEADER = "X-Correlation-ID"
 

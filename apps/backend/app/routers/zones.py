@@ -2,6 +2,7 @@
 
 Manages Digital Twin states, AI crowd analysis, and stadium zone actions.
 """
+
 import logging
 from typing import Annotated, Any
 
@@ -95,9 +96,7 @@ async def analyse_zone(
     zone = db.get(Zone, zone_id)
     if not zone:
         raise NotFoundError("Zone", zone_id).to_http_exception()
-    result = await orchestrate_crowd(
-        zone.id, zone.name, zone.density_pct, zone.capacity
-    )
+    result = await orchestrate_crowd(zone.id, zone.name, zone.density_pct, zone.capacity)
     return result
 
 
@@ -172,9 +171,9 @@ async def kpi_summary(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]
     """
     zones = db.query(Zone).all()
     total_occupancy = sum(int(z.density_pct * z.capacity) for z in zones)
-    active_incidents = db.query(Incident).filter(
-        Incident.status.in_([IncidentStatus.open, IncidentStatus.in_progress])
-    ).count()
+    active_incidents = (
+        db.query(Incident).filter(Incident.status.in_([IncidentStatus.open, IncidentStatus.in_progress])).count()
+    )
     critical_zones = sum(1 for z in zones if z.color_state == ColorState.critical)
     ai_actions = db.query(AuditLog).count()
 

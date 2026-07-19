@@ -1,6 +1,7 @@
 """Unit tests for the telemetry simulation loop and WebSocket broadcaster.
 Provides 100% test coverage for app/telemetry.py.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -81,7 +82,14 @@ class TelemetryExitException(Exception):
 @pytest.mark.asyncio
 async def test_telemetry_loop():
     """Verify database initialization and one step execution of the telemetry loop."""
-    mock_zone = Zone(id="gate_a", name="Gate A", zone_type=ZoneType.gate, capacity=2000, density_pct=0.5, color_state=ColorState.green)
+    mock_zone = Zone(
+        id="gate_a",
+        name="Gate A",
+        zone_type=ZoneType.gate,
+        capacity=2000,
+        density_pct=0.5,
+        color_state=ColorState.green,
+    )
 
     # Setup mock DB query
     mock_db = MagicMock()
@@ -94,14 +102,16 @@ async def test_telemetry_loop():
     # First sleep (startup delay) -> pass
     # Second sleep (interval loop) -> raise TelemetryExitException to break out
     sleep_calls = []
+
     async def mock_sleep(secs):
         sleep_calls.append(secs)
         if len(sleep_calls) > 2:
             raise TelemetryExitException()
 
-    with patch("asyncio.sleep", mock_sleep), \
-         patch("app.telemetry._broadcast", new_callable=AsyncMock) as mock_broadcast:
-
+    with (
+        patch("asyncio.sleep", mock_sleep),
+        patch("app.telemetry._broadcast", new_callable=AsyncMock) as mock_broadcast,
+    ):
         with pytest.raises(TelemetryExitException):
             await telemetry_loop(mock_get_db)
 

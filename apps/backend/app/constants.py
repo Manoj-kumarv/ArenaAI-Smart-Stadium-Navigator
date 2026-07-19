@@ -3,6 +3,7 @@
 Centralizes all magic numbers and strings used across the application,
 improving maintainability and making business rules explicit.
 """
+
 from __future__ import annotations
 
 # ─── Zone Density Thresholds ──────────────────────────────────────────────────
@@ -106,7 +107,5 @@ PII_DESCRIPTION_TRUNCATE_LENGTH: int = 120
 
 # ─── Broadcast Schema ─────────────────────────────────────────────────────────
 
-BROADCAST_REQUIRED_LANGUAGES: frozenset[str] = frozenset(
-    {"message_en", "message_es", "message_ar"}
-)
+BROADCAST_REQUIRED_LANGUAGES: frozenset[str] = frozenset({"message_en", "message_es", "message_ar"})
 """Required language keys for a valid broadcast response (atomicity check)."""

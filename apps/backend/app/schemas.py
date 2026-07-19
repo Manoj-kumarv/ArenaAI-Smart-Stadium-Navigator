@@ -1,4 +1,5 @@
 """Pydantic v2 request/response schemas for all endpoints."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -8,6 +9,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.models import AuditAction, ColorState, IncidentSeverity, IncidentStatus, UserRole, ZoneType
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
+
 
 class SignupRequest(BaseModel):
     username: str = Field(min_length=3, max_length=64)
@@ -33,6 +35,7 @@ class RefreshRequest(BaseModel):
 
 
 # ─── Zone ─────────────────────────────────────────────────────────────────────
+
 
 class ZoneOut(BaseModel):
     id: str
@@ -76,6 +79,7 @@ class CrowdAnalysisResponse(BaseModel):
 
 # ─── Incident ─────────────────────────────────────────────────────────────────
 
+
 class IncidentCreate(BaseModel):
     zone_id: str | None = None
     title: str = Field(min_length=5, max_length=256)
@@ -115,6 +119,7 @@ class ResolveResponse(BaseModel):
 
 # ─── Broadcast ────────────────────────────────────────────────────────────────
 
+
 class BroadcastRequest(BaseModel):
     incident_id: int
 
@@ -133,6 +138,7 @@ class BroadcastOut(BaseModel):
 
 # ─── Fan ─────────────────────────────────────────────────────────────────────
 
+
 class FanQueryRequest(BaseModel):
     query: str = Field(min_length=3, max_length=500)
 
@@ -146,6 +152,7 @@ class FanQueryResponse(BaseModel):
 
 
 # ─── Audit ────────────────────────────────────────────────────────────────────
+
 
 class AuditLogOut(BaseModel):
     id: int
@@ -168,6 +175,7 @@ class AuditPage(BaseModel):
 
 # ─── KPI Dashboard ────────────────────────────────────────────────────────────
 
+
 class KPIResponse(BaseModel):
     attendance: int
     active_incidents: int
@@ -177,6 +185,7 @@ class KPIResponse(BaseModel):
 
 
 # ─── New Added Schemas ────────────────────────────────────────────────────────
+
 
 class UserMeResponse(BaseModel):
     id: int

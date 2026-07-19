@@ -3,6 +3,7 @@
 Uses pydantic-settings to load configuration from environment variables
 or .env files with automatic validation.
 """
+
 from __future__ import annotations
 
 from pydantic import Field, field_validator

@@ -3,6 +3,7 @@
 Provides public Q&A assistant endpoints for stadium visitors.
 Ensures inputs are sanitized and checked for PII and prompt injection.
 """
+
 import logging
 from typing import Any
 

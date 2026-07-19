@@ -3,6 +3,7 @@
 Generates trilingual PA announcements for stadium security incidents.
 Ensures atomicity (all or nothing) across the three languages.
 """
+
 import logging
 from typing import Annotated
 
@@ -139,10 +140,5 @@ async def list_audit_log(
     """
     q = db.query(AuditLog)
     total = q.count()
-    items = (
-        q.order_by(AuditLog.created_at.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
+    items = q.order_by(AuditLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     return AuditPage(items=items, total=total, page=page, page_size=page_size)

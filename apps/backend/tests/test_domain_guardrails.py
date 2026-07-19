@@ -2,6 +2,7 @@
 Verifies that the fan assistant prompt contains strict rules rejecting out-of-domain topics
 (math, coding, general knowledge) and validates the agent behavior.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -27,7 +28,7 @@ async def test_fan_agent_handles_domain_refusal_response():
         "answer_en": "As your ArenaIQ Stadium Assistant, I can only help you with questions related to the World Cup 2026 Stadium.",
         "answer_es": "Como su asistente de estadio ArenaIQ, solo puedo ayudarle con preguntas relacionadas con el Estadio.",
         "answer_ar": "بصفتي مساعد ملعب ArenaIQ، لا يمكنني مساعدتك إلا في الأسئلة المتعلقة بالملعب.",
-        "confidence": 1.0
+        "confidence": 1.0,
     }
 
     with patch("app.ai.fan_agent.call_gemini_json", new_callable=AsyncMock) as mock_call:

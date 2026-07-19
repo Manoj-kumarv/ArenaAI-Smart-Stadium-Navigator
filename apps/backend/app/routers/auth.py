@@ -2,6 +2,7 @@
 
 Handles signup, login, token refresh, and user profile retrieval.
 """
+
 import logging
 from typing import Annotated, Any
 
@@ -50,9 +51,7 @@ async def signup(
         AlreadyExistsError: If the username or email is already registered.
 
     """
-    if db.query(User).filter(
-        (User.username == payload.username) | (User.email == payload.email)
-    ).first():
+    if db.query(User).filter((User.username == payload.username) | (User.email == payload.email)).first():
         raise AlreadyExistsError("User", f"{payload.username}/{payload.email}").to_http_exception()
 
     user = User(

@@ -20,6 +20,7 @@ from app.database import Base
 
 # ─── Enums ────────────────────────────────────────────────────────────────────
 
+
 class UserRole(str, enum.Enum):
     ops_staff = "ops_staff"
     fan = "fan"
@@ -64,6 +65,7 @@ class AuditAction(str, enum.Enum):
 
 # ─── Zone color-state logic (canonical — also used in tests) ──────────────────
 
+
 def density_to_color(density_pct: float) -> ColorState:
     """Property 1 (tested):
     green    : density_pct < 0.60
@@ -90,6 +92,7 @@ def cap_density(density_pct: float) -> tuple[float, bool]:
 
 # ─── Models ───────────────────────────────────────────────────────────────────
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -107,7 +110,7 @@ class User(Base):
 class Zone(Base):
     __tablename__ = "zones"
 
-    id = Column(String(32), primary_key=True)   # e.g. "gate_a", "section_101"
+    id = Column(String(32), primary_key=True)  # e.g. "gate_a", "section_101"
     name = Column(String(128), nullable=False)
     zone_type = Column(Enum(ZoneType), nullable=False)
     capacity = Column(Integer, nullable=False, default=500)
@@ -115,7 +118,7 @@ class Zone(Base):
     color_state = Column(Enum(ColorState), nullable=False, default=ColorState.green)
     is_step_free = Column(Boolean, default=False)
     is_low_noise = Column(Boolean, default=False)
-    x = Column(Float, nullable=False, default=0.0)   # SVG coordinate
+    x = Column(Float, nullable=False, default=0.0)  # SVG coordinate
     y = Column(Float, nullable=False, default=0.0)
     w = Column(Float, nullable=False, default=60.0)
     h = Column(Float, nullable=False, default=40.0)
@@ -145,7 +148,7 @@ class Incident(Base):
     description = Column(Text, nullable=False)
     severity = Column(Enum(IncidentSeverity), nullable=False, default=IncidentSeverity.medium)
     status = Column(Enum(IncidentStatus), nullable=False, default=IncidentStatus.open)
-    ai_severity_score = Column(Float, nullable=True)   # 0.0–1.0 from AI agent
+    ai_severity_score = Column(Float, nullable=True)  # 0.0–1.0 from AI agent
     ai_resolution = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

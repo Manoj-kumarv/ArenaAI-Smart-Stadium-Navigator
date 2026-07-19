@@ -3,6 +3,7 @@
 Handles calls to Google's Generative AI API with structured timeout,
 exception safety, and automated fallback detection.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 # Verify google.generativeai module availability
 try:
     import google.generativeai as genai  # type: ignore[import]
+
     _GENAI_AVAILABLE = True
 except ImportError:
     _GENAI_AVAILABLE = False

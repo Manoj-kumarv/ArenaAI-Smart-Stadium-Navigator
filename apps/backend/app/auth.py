@@ -3,6 +3,7 @@
 Handles password hashing, token generation, user retrieval,
 and role-based access control (RBAC).
 """
+
 from __future__ import annotations
 
 import logging
@@ -28,6 +29,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 # ─── Password hashing ─────────────────────────────────────────────────────────
+
 
 def get_password_hash(password: str) -> str:
     """Generate a bcrypt password hash for a plain text password.
@@ -63,6 +65,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 # ─── JWT ──────────────────────────────────────────────────────────────────────
+
 
 def _create_token(data: dict, expires_delta: timedelta) -> str:
     """Helper to generate JWT tokens with an expiration date."""
@@ -107,6 +110,7 @@ def create_refresh_token(user_id: int) -> str:
 
 # ─── Current-user dependency ──────────────────────────────────────────────────
 
+
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[Session, Depends(get_db)],
@@ -148,6 +152,7 @@ def get_current_user(
 
 # ─── RBAC dependency factory ──────────────────────────────────────────────────
 
+
 def require_role(*roles: UserRole) -> Callable[[User], User]:
     """FastAPI dependency factory enforcing role-based access control.
 
@@ -158,6 +163,7 @@ def require_role(*roles: UserRole) -> Callable[[User], User]:
         A dependency function that checks user authorization.
 
     """
+
     def _checker(current_user: Annotated[User, Depends(get_current_user)]) -> User:
         if current_user.role not in roles:
             raise AuthorizationError(
@@ -165,4 +171,5 @@ def require_role(*roles: UserRole) -> Callable[[User], User]:
                 action="this action",
             ).to_http_exception()
         return current_user
+
     return _checker

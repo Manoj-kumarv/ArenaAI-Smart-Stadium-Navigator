@@ -9,6 +9,7 @@ Features:
     - Configurable log level via environment variables
     - Request metadata (path, method) in log entries
 """
+
 from __future__ import annotations
 
 import json

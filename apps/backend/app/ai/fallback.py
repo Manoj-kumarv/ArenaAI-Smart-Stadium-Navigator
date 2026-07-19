@@ -1,6 +1,7 @@
 """Rule-based fallback responses for all three agents.
 Activated automatically when Gemini is unavailable or returns invalid JSON.
 """
+
 from __future__ import annotations
 
 from app.models import ColorState

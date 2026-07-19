@@ -1,6 +1,7 @@
 """RBAC tests — Property 3.
 Every write endpoint must return 403 when called with a fan role token.
 """
+
 from __future__ import annotations
 
 from app.models import Zone, ZoneType
@@ -8,8 +9,7 @@ from tests.conftest import fan_headers, ops_headers
 
 
 def seed_zone(db):
-    z = Zone(id="gate_a", name="Gate A", zone_type=ZoneType.gate,
-              capacity=800, x=200, y=10, w=80, h=50)
+    z = Zone(id="gate_a", name="Gate A", zone_type=ZoneType.gate, capacity=800, x=200, y=10, w=80, h=50)
     db.add(z)
     db.commit()
     return z
@@ -27,6 +27,7 @@ def seed_incident(client, db):
 
 
 # ─── Write endpoints that must reject fan role ────────────────────────────────
+
 
 def test_create_incident_fan_gets_403(client, db):
     seed_zone(db)
@@ -76,6 +77,7 @@ def test_audit_log_fan_gets_403(client, db):
 
 
 # ─── Ops endpoints that SHOULD work ──────────────────────────────────────────
+
 
 def test_create_incident_ops_succeeds(client, db):
     seed_zone(db)

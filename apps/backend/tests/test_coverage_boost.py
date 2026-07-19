@@ -23,6 +23,7 @@ from tests.conftest import fan_headers, ops_headers
 
 # ─── Part 1: Request Size Middleware ──────────────────────────────────────────
 
+
 def test_request_size_middleware_large_body(client):
     headers = {"Content-Length": "10000000"}  # 10MB, way above 1MB limit
     res = client.post("/api/auth/signup", json={"username": "a"}, headers=headers)
@@ -36,6 +37,7 @@ def test_request_size_middleware_invalid_length(client):
 
 
 # ─── Part 2: Fallback Classifications ─────────────────────────────────────────
+
 
 def test_fallback_classify_query():
     assert _classify_query("Give me food please") == "food"
@@ -53,12 +55,15 @@ def test_fallback_classify_incident_severity():
 
 # ─── Part 3: Client and Agent Validation ──────────────────────────────────────
 
+
 @patch("app.ai.gemini_client.genai")
 def test_ensure_client_configures(mock_genai):
     from app.ai.gemini_client import _ensure_client
+
     with patch("app.ai.gemini_client.settings") as mock_settings:
         mock_settings.GEMINI_API_KEY = "test-key-value"
         import app.ai.gemini_client
+
         app.ai.gemini_client._client_initialized = False
         assert _ensure_client() is True
         mock_genai.configure.assert_called_once_with(api_key="test-key-value")
@@ -67,10 +72,12 @@ def test_ensure_client_configures(mock_genai):
 @patch("app.ai.gemini_client.genai")
 def test_ensure_client_failure_logs(mock_genai):
     from app.ai.gemini_client import _ensure_client
+
     mock_genai.configure.side_effect = Exception("Config error")
     with patch("app.ai.gemini_client.settings") as mock_settings:
         mock_settings.GEMINI_API_KEY = "test-key-value"
         import app.ai.gemini_client
+
         app.ai.gemini_client._client_initialized = False
         assert _ensure_client() is False
 
@@ -78,7 +85,10 @@ def test_ensure_client_failure_logs(mock_genai):
 def test_validation_crowd():
     assert validate_crowd(None, "zone_1") is False
     assert validate_crowd({"zone_id": "zone_1"}, "zone_1") is False
-    assert validate_crowd({"zone_id": "zone_1", "cause": "c", "recommendation": "r", "confidence": "invalid"}, "zone_1") is False
+    assert (
+        validate_crowd({"zone_id": "zone_1", "cause": "c", "recommendation": "r", "confidence": "invalid"}, "zone_1")
+        is False
+    )
 
 
 def test_validation_fan():
@@ -90,19 +100,33 @@ def test_validation_fan():
 def test_validation_incident():
     assert validate_incident(None, "zone_1") is False
     assert validate_incident({"zone_id": "zone_1"}, "zone_1") is False
-    assert validate_incident({"zone_id": "zone_1", "severity": "invalid", "confidence": 0.5, "cause": "c", "recommendation": "r"}, "zone_1") is False
-    assert validate_incident({"zone_id": "zone_1", "severity": "low", "confidence": "invalid", "cause": "c", "recommendation": "r"}, "zone_1") is False
+    assert (
+        validate_incident(
+            {"zone_id": "zone_1", "severity": "invalid", "confidence": 0.5, "cause": "c", "recommendation": "r"},
+            "zone_1",
+        )
+        is False
+    )
+    assert (
+        validate_incident(
+            {"zone_id": "zone_1", "severity": "low", "confidence": "invalid", "cause": "c", "recommendation": "r"},
+            "zone_1",
+        )
+        is False
+    )
 
 
 @pytest.mark.asyncio
 async def test_call_gemini_none():
     from app.ai.gemini_client import call_gemini, call_gemini_json
+
     with patch("app.ai.gemini_client._ensure_client", return_value=False):
         assert await call_gemini("test") is None
         assert await call_gemini_json("test") is None
 
 
 # ─── Part 4: Authentication Core ──────────────────────────────────────────────
+
 
 def test_verify_password_exception():
     assert verify_password(None, "hash") is False
@@ -125,11 +149,7 @@ def test_get_current_user_missing_or_inactive(db):
         get_current_user(token_missing, db)
 
     inactive_user = User(
-        username="inactive_u",
-        email="inactive@test.local",
-        hashed_password="...",
-        role=UserRole.fan,
-        is_active=False
+        username="inactive_u", email="inactive@test.local", hashed_password="...", role=UserRole.fan, is_active=False
     )
     db.add(inactive_user)
     db.commit()
@@ -140,11 +160,13 @@ def test_get_current_user_missing_or_inactive(db):
 
 # ─── Part 5: Correlation ──────────────────────────────────────────────────────
 
+
 def test_correlation_id_outside_context():
     assert get_correlation_id() is None
 
 
 # ─── Part 6: Structured Logging Formatter ─────────────────────────────────────
+
 
 def test_structured_formatter():
     formatter = StructuredFormatter()
@@ -155,7 +177,7 @@ def test_structured_formatter():
         lineno=10,
         msg="Test message",
         args=(),
-        exc_info=None
+        exc_info=None,
     )
     formatted = formatter.format(record)
     assert "Test message" in formatted
@@ -164,6 +186,7 @@ def test_structured_formatter():
         raise ValueError("Oops")
     except ValueError as exc:
         import sys
+
         record.exc_info = sys.exc_info()
     formatted_exc = formatter.format(record)
     assert "ValueError: Oops" in formatted_exc
@@ -184,13 +207,14 @@ def test_setup_logging_structured():
 
 # ─── Part 7: Auth Router ──────────────────────────────────────────────────────
 
+
 def test_login_inactive_user(client, db):
     inactive = User(
         username="inactive_ops",
         email="inactive_ops@test.local",
         hashed_password=get_password_hash("password123"),
         role=UserRole.ops_staff,
-        is_active=False
+        is_active=False,
     )
     db.add(inactive)
     db.commit()
@@ -210,7 +234,7 @@ def test_refresh_token_inactive_user(client, db):
         email="inactive_refresh@test.local",
         hashed_password=get_password_hash("password123"),
         role=UserRole.fan,
-        is_active=False
+        is_active=False,
     )
     db.add(inactive)
     db.commit()
@@ -220,6 +244,7 @@ def test_refresh_token_inactive_user(client, db):
 
 
 # ─── Part 8: Broadcast Router ─────────────────────────────────────────────────
+
 
 def test_broadcast_incident_not_found(client):
     res = client.post("/api/broadcast", json={"incident_id": 99999}, headers=ops_headers(client))
@@ -255,15 +280,23 @@ def test_list_audit_log_pagination(client):
 
 # ─── Part 9: Fan Router ───────────────────────────────────────────────────────
 
+
 @patch("app.routers.fan.orchestrate_fan")
 def test_ask_fan_assistant(mock_orch, client):
-    mock_orch.return_value = {"answer_en": "Yes", "answer_es": "Si", "answer_ar": "Naam", "confidence": 0.9, "used_ai": True}
+    mock_orch.return_value = {
+        "answer_en": "Yes",
+        "answer_es": "Si",
+        "answer_ar": "Naam",
+        "confidence": 0.9,
+        "used_ai": True,
+    }
     res = client.post("/api/fan/ask", json={"query": "Where is Gate A?"})
     assert res.status_code == status.HTTP_200_OK
     assert res.json()["answer_en"] == "Yes"
 
 
 # ─── Part 10: Incidents Router ────────────────────────────────────────────────
+
 
 def test_list_incidents_filter(client):
     res = client.get("/api/incidents?status=open&page=1&page_size=10", headers=ops_headers(client))
@@ -305,12 +338,17 @@ def test_delete_incident_success(client, db):
 
 # ─── Part 11: Zones Router ────────────────────────────────────────────────────
 
+
 def test_zones_exceptions(client):
     res = client.get("/api/zones/invalid_zone")
     assert res.status_code == status.HTTP_404_NOT_FOUND
     res = client.post("/api/zones/invalid_zone/analyse", headers=ops_headers(client))
     assert res.status_code == status.HTTP_404_NOT_FOUND
-    res = client.post("/api/zones/action", json={"zone_id": "invalid_zone", "action": "deploy_volunteers", "detail": "test"}, headers=ops_headers(client))
+    res = client.post(
+        "/api/zones/action",
+        json={"zone_id": "invalid_zone", "action": "deploy_volunteers", "detail": "test"},
+        headers=ops_headers(client),
+    )
     assert res.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -325,14 +363,17 @@ def test_get_zone_success(client, db):
 
 # ─── Part 12: Schemas & PII ───────────────────────────────────────────────────
 
+
 def test_schema_validate_action_exception():
     from app.schemas import ZoneActionRequest
+
     with pytest.raises(ValidationError):
         ZoneActionRequest(zone_id="1", action="invalid")
 
 
 def test_pii_filters_ssn_and_card():
     from app.ai.filters import check_pii_in_input
+
     with pytest.raises(HTTPException):
         check_pii_in_input("my SSN is 123-45-6789")
     with pytest.raises(HTTPException):
@@ -340,6 +381,7 @@ def test_pii_filters_ssn_and_card():
 
 
 # ─── Part 13: Readiness Check Database Exception ──────────────────────────────
+
 
 @patch("app.main.get_db")
 def test_readiness_db_exception(mock_get_db, client):
@@ -351,6 +393,7 @@ def test_readiness_db_exception(mock_get_db, client):
 
 
 # ─── Part 14: Telemetry Loop Cleanup and Exceptions ──────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_telemetry_loop_exceptions_and_cleanup(db):

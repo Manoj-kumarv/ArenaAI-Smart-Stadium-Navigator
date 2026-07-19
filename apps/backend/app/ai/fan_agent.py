@@ -1,6 +1,7 @@
 """Fan Assistant Agent — answers fan queries in English, Spanish, and Arabic.
 Supports RTL (Arabic) responses.
 """
+
 from __future__ import annotations
 
 from app.ai.fallback import fan_fallback

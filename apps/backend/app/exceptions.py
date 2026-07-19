@@ -14,6 +14,7 @@ Exception Hierarchy:
     ├── AIServiceError         → 502
     └── RateLimitError         → 429
 """
+
 from __future__ import annotations
 
 from fastapi import HTTPException, status
@@ -111,6 +112,4 @@ class ResolutionRollbackError(ArenaIQError):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
     def __init__(self, incident_id: int, reason: str) -> None:
-        super().__init__(
-            f"Resolution of incident {incident_id} failed and was rolled back: {reason}"
-        )
+        super().__init__(f"Resolution of incident {incident_id} failed and was rolled back: {reason}")

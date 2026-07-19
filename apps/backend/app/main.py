@@ -9,6 +9,7 @@ Configures the ASGI application with:
 - Lifespan: database initialization, seed data, telemetry background task
 - Graceful shutdown for in-flight WebSocket connections
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -42,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 # ─── Lifespan ─────────────────────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -152,6 +154,7 @@ app.include_router(ws.router)
 
 # ─── Health & Readiness ───────────────────────────────────────────────────────
 
+
 @app.get("/health", tags=["health"])
 async def health() -> dict:
     """Basic liveness probe.
@@ -180,6 +183,7 @@ async def readiness() -> dict:
     # Check database
     try:
         from sqlalchemy import text
+
         db = next(get_db())
         db.execute(text("SELECT 1"))
         db.close()
@@ -188,9 +192,7 @@ async def readiness() -> dict:
         checks["database"] = f"error: {exc}"
 
     # Check Gemini availability
-    checks["gemini_api"] = (
-        "configured" if settings.GEMINI_API_KEY.strip() else "not_configured (fallback mode)"
-    )
+    checks["gemini_api"] = "configured" if settings.GEMINI_API_KEY.strip() else "not_configured (fallback mode)"
 
     overall = "ok" if checks.get("database") == "ok" else "degraded"
     return {"status": overall, "checks": checks}

@@ -3,6 +3,7 @@
 Applies strict safety patterns on inputs prior to AI execution and scrubs
 sensitive data from outputs before returning results.
 """
+
 from __future__ import annotations
 
 import re
@@ -98,8 +99,5 @@ def has_pii(text: str) -> bool:
 
     """
     return bool(
-        _EMAIL_RE.search(text)
-        or _PHONE_RE.search(text)
-        or _SSN_RE.search(text)
-        or _CREDIT_CARD_RE.search(text)
+        _EMAIL_RE.search(text) or _PHONE_RE.search(text) or _SSN_RE.search(text) or _CREDIT_CARD_RE.search(text)
     )

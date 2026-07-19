@@ -3,6 +3,7 @@
 Simulates drift in zone density over time and pushes telemetry updates
 via active WebSocket connections.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -157,19 +158,23 @@ async def telemetry_loop(
                 zone.updated_at = datetime.now(UTC)
 
                 # Record history
-                db.add(ZoneDensityHistory(
-                    zone_id=zone.id,
-                    density_pct=capped,
-                    color_state=color,
-                ))
+                db.add(
+                    ZoneDensityHistory(
+                        zone_id=zone.id,
+                        density_pct=capped,
+                        color_state=color,
+                    )
+                )
 
-                updates.append({
-                    "zone_id": zone.id,
-                    "density_pct": round(capped, 4),
-                    "color_state": color.value,
-                    "was_capped": was_capped,
-                    "ts": datetime.now(UTC).isoformat(),
-                })
+                updates.append(
+                    {
+                        "zone_id": zone.id,
+                        "density_pct": round(capped, 4),
+                        "color_state": color.value,
+                        "was_capped": was_capped,
+                        "ts": datetime.now(UTC).isoformat(),
+                    }
+                )
 
             # Periodic cleanup of old history rows
             now = datetime.utcnow()
@@ -181,11 +186,13 @@ async def telemetry_loop(
             db.commit()
 
             # Broadcast to all WS clients
-            await _broadcast({
-                "type": "telemetry",
-                "data": updates,
-                "server_ts": datetime.now(UTC).isoformat(),
-            })
+            await _broadcast(
+                {
+                    "type": "telemetry",
+                    "data": updates,
+                    "server_ts": datetime.now(UTC).isoformat(),
+                }
+            )
 
         except Exception as exc:
             logger.error("Telemetry loop error: %s", exc)

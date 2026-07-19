@@ -3,6 +3,7 @@ Simulates a mid-resolution failure and asserts:
   - incident status reverts to 'open'
   - no partial audit rows persist
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -26,6 +27,7 @@ def _seed(db):
 
 
 # ─── Property 8: rollback on AI failure ──────────────────────────────────────
+
 
 def test_incident_rollback_on_ai_failure(client, db):
     """When the AI agent raises an exception mid-workflow, the incident status
@@ -52,13 +54,12 @@ def test_incident_rollback_on_ai_failure(client, db):
 
     # Re-fetch from a fresh DB session
     from tests.conftest import TestingSessionLocal
+
     fresh_db = TestingSessionLocal()
     try:
         reverted = fresh_db.get(Incident, inc_id)
         assert reverted is not None
-        assert reverted.status == IncidentStatus.open, (
-            f"Expected 'open' after rollback, got '{reverted.status}'"
-        )
+        assert reverted.status == IncidentStatus.open, f"Expected 'open' after rollback, got '{reverted.status}'"
         # No partial audit rows should remain
         final_audit_count = fresh_db.query(AuditLog).count()
         assert final_audit_count == initial_audit_count, (
@@ -100,12 +101,16 @@ def test_incident_already_resolved_returns_400(client, db):
     inc_id = _seed(db)
 
     mock_result = {
-        "zone_id": "gate_a", "severity": "low", "confidence": 0.5,
-        "cause": "Minor", "recommendation": "Monitor", "used_ai": False, "ai_severity_score": 0.5,
+        "zone_id": "gate_a",
+        "severity": "low",
+        "confidence": 0.5,
+        "cause": "Minor",
+        "recommendation": "Monitor",
+        "used_ai": False,
+        "ai_severity_score": 0.5,
     }
 
-    with patch("app.routers.incidents.orchestrate_incident",
-               new_callable=AsyncMock, return_value=mock_result):
+    with patch("app.routers.incidents.orchestrate_incident", new_callable=AsyncMock, return_value=mock_result):
         client.post(f"/api/incidents/{inc_id}/resolve", headers=ops_headers(client))
         r2 = client.post(f"/api/incidents/{inc_id}/resolve", headers=ops_headers(client))
 

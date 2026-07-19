@@ -3,6 +3,7 @@ Property 4 — prompt injection strings return 422 and NEVER reach the LLM.
 Property 5 — PII in input returns 422 and NEVER reaches the LLM.
 Property 6 — confidence score is always 0.0–1.0.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -47,6 +48,7 @@ async def test_prompt_injection_never_reaches_llm(injection: str):
     with patch("app.ai.gemini_client.call_gemini_json", new_callable=AsyncMock) as mock_gemini:
         with pytest.raises(HTTPException):
             from app.ai.fan_agent import run_fan_agent
+
             await run_fan_agent(injection)
         mock_gemini.assert_not_called()
 
@@ -105,9 +107,11 @@ def test_has_pii_clean():
 
 # ─── Property 6: confidence score always 0.0–1.0 ────────────────────────────
 
+
 def test_crowd_fallback_confidence_in_range():
     from app.ai.fallback import crowd_fallback
     from app.models import ColorState
+
     for state in ColorState:
         result = crowd_fallback("gate_a", "Gate A", 0.5, state)
         assert 0.0 <= result["confidence"] <= 1.0
@@ -115,11 +119,13 @@ def test_crowd_fallback_confidence_in_range():
 
 def test_incident_fallback_confidence_in_range():
     from app.ai.fallback import incident_fallback
+
     result = incident_fallback("Test incident", "A test description", "gate_a")
     assert 0.0 <= result["confidence"] <= 1.0
 
 
 def test_fan_fallback_confidence_in_range():
     from app.ai.fallback import fan_fallback
+
     result = fan_fallback("where is the food?")
     assert 0.0 <= result["confidence"] <= 1.0

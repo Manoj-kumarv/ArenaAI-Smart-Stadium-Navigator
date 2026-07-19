@@ -1,4 +1,5 @@
 """WebSocket endpoint for live telemetry push."""
+
 from __future__ import annotations
 
 import logging

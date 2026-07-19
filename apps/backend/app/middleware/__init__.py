@@ -1,4 +1,5 @@
 """Middleware package for ArenaIQ request processing pipeline."""
+
 from __future__ import annotations
 
 __all__ = [

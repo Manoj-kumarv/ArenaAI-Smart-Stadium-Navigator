@@ -1,5 +1,5 @@
-"""Shared test fixtures — in-memory SQLite, FastAPI TestClient with overridden DB.
-"""
+"""Shared test fixtures — in-memory SQLite, FastAPI TestClient with overridden DB."""
+
 from __future__ import annotations
 
 import pytest

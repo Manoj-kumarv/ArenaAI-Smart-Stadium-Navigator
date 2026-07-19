@@ -1,6 +1,7 @@
 """Crowd Agent — explains zone congestion and recommends actions.
 Returns strict JSON; retries once on schema mismatch; falls back to rule-based.
 """
+
 from __future__ import annotations
 
 from app.ai.fallback import crowd_fallback

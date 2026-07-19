@@ -3,6 +3,7 @@
 Routes operational requests to the appropriate AI agent (Crowd, Fan, Incident)
 or fallback templates, and handles atomic generation of trilingual announcements.
 """
+
 from __future__ import annotations
 
 import logging
@@ -155,10 +156,7 @@ async def generate_broadcast(
     if (
         result
         and BROADCAST_REQUIRED_LANGUAGES.issubset(result.keys())
-        and all(
-            isinstance(result[k], str) and result[k].strip()
-            for k in BROADCAST_REQUIRED_LANGUAGES
-        )
+        and all(isinstance(result[k], str) and result[k].strip() for k in BROADCAST_REQUIRED_LANGUAGES)
     ):
         result["used_ai"] = True
         return result

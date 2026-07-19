@@ -3,6 +3,7 @@
 Enforces limits on incoming requests using slowapi to mitigate abuse and
 prevent Denial of Service (DoS) conditions.
 """
+
 from __future__ import annotations
 
 from slowapi import Limiter
