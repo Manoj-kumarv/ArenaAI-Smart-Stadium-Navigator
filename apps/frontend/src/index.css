@@ -1392,3 +1392,240 @@ select {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   backdrop-filter: blur(8px);
 }
+
+/* ── Responsive Mobile & Tablet Media Queries ──────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .content {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Split Auth Landing Page -> Single Column */
+  .auth-grid {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    background: linear-gradient(180deg, rgba(8, 12, 20, 0.94) 0%, rgba(8, 12, 20, 0.88) 100%),
+                url('/stadium_background.png') no-repeat center center / cover;
+  }
+
+  .auth-hero-panel {
+    padding: 2.5rem 1.5rem 1.5rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .auth-hero-title {
+    font-size: 2rem;
+    line-height: 1.25;
+    margin-bottom: 0.75rem;
+  }
+
+  .auth-hero-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .auth-features-list {
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .auth-form-panel {
+    padding: 2rem 1.25rem;
+  }
+
+  .auth-card {
+    padding: 1.75rem 1.25rem;
+    max-width: 100%;
+  }
+
+  /* Fan portal shell */
+  .fan-shell {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Main Content Layout */
+  .content {
+    padding: 0.85rem;
+  }
+
+  /* Navigation Topbar Header */
+  .topbar {
+    padding: 0 0.85rem;
+    height: 56px;
+  }
+
+  .topbar-brand {
+    gap: 0.5rem;
+  }
+
+  .brand-subtitle {
+    display: none !important;
+  }
+
+  .topbar-nav {
+    gap: 0.2rem;
+  }
+
+  .nav-btn {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .topbar-right {
+    gap: 0.4rem;
+  }
+
+  .role-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .logout-text {
+    font-size: 0.75rem;
+  }
+
+  /* KPI Bar Mobile Grid */
+  .kpi-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .kpi-card {
+    padding: 0.85rem 1rem;
+  }
+
+  .kpi-value {
+    font-size: 1.5rem;
+  }
+
+  /* Command Center Digital Twin Map Controls */
+  .map-controls {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.85rem;
+    padding: 0.75rem;
+  }
+
+  .map-controls .legend {
+    width: 100%;
+    order: 3;
+    justify-content: flex-start;
+    padding-top: 0.35rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .toggle-wrap {
+    margin-left: 0 !important;
+  }
+
+  /* AI Panel Mobile Bottom Sheet Drawer */
+  .ai-panel {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 75vh;
+    max-height: 520px;
+    border-left: none;
+    border-top: 2px solid var(--accent);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.75);
+    z-index: 500;
+    animation: slideUp 0.25s ease;
+  }
+
+  /* Mobile Inputs Font Size Fix (Prevent iOS Auto-Zoom) */
+  .form-input,
+  .chat-input,
+  .form-select {
+    font-size: 16px !important;
+  }
+
+  /* Modals on Mobile */
+  .modal {
+    padding: 1.25rem;
+    width: calc(100% - 1.5rem);
+    margin: 0 0.75rem;
+    max-height: 90vh;
+  }
+}
+
+@media (max-width: 520px) {
+  /* Extra Small Devices Header */
+  .nav-btn-text {
+    display: none;
+  }
+
+  .nav-btn {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.95rem;
+  }
+
+  .role-badge {
+    display: none;
+  }
+
+  .auth-hero-title {
+    font-size: 1.6rem;
+  }
+
+  .auth-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    padding-top: 1.25rem;
+  }
+
+  .auth-stat-val {
+    font-size: 1.25rem;
+  }
+
+  .auth-stat-lbl {
+    font-size: 0.65rem;
+  }
+
+  /* Incident Queue Mobile Item Stacking */
+  .incident-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+    padding: 0.75rem;
+  }
+
+  .incident-actions {
+    width: 100%;
+    justify-content: flex-end;
+    border-top: 1px solid var(--border);
+    padding-top: 0.5rem;
+  }
+
+  .incident-actions .btn {
+    flex: 1;
+  }
+
+  /* Fan Portal Mobile Chat */
+  .fan-chat {
+    min-height: 400px;
+  }
+
+  .chat-bubble {
+    max-width: 92%;
+    font-size: 0.82rem;
+  }
+
+  .lang-tabs {
+    gap: 0.15rem;
+  }
+
+  .lang-tab {
+    padding: 0.25rem 0.45rem;
+    font-size: 0.7rem;
+  }
+}

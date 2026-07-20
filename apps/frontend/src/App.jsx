@@ -42,7 +42,7 @@ function Shell() {
           <div className="logo-icon" aria-hidden="true">🏟</div>
           <h1 style={{ margin: 0, fontSize: '1rem', display: 'inline-flex', alignItems: 'baseline', gap: '0.35rem' }}>
             <span style={{ fontWeight: 700 }}>ArenaIQ</span>
-            <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>FIFA World Cup 2026</span>
+            <span className="brand-subtitle" style={{ fontSize: '.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>FIFA World Cup 2026</span>
           </h1>
         </div>
 
@@ -53,7 +53,7 @@ function Shell() {
             onClick={() => setView('map')}
             aria-current={view === 'map' ? 'page' : undefined}
           >
-            🗺 Operations
+            <span aria-hidden="true">🗺</span> <span className="nav-btn-text">Operations</span>
           </button>
           <button
             id="nav-fan"
@@ -61,12 +61,12 @@ function Shell() {
             onClick={() => setView('fan')}
             aria-current={view === 'fan' ? 'page' : undefined}
           >
-            ⭐ Fan Portal
+            <span aria-hidden="true">⭐</span> <span className="nav-btn-text">Fan Portal</span>
           </button>
         </nav>
 
         <div className="topbar-right">
-          <span className={`badge ${isOps ? 'badge-open' : 'badge-green'}`}>
+          <span className={`badge ${isOps ? 'badge-open' : 'badge-green'} role-badge`}>
             {isOps ? '🔐 Ops Staff' : '🎟 Fan'}
           </span>
           <button
@@ -75,7 +75,7 @@ function Shell() {
             onClick={logout}
             aria-label="Sign out"
           >
-            Sign out
+            <span className="logout-text">Sign out</span>
           </button>
         </div>
       </header>
